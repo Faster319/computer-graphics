@@ -1,0 +1,5 @@
+Demo availeble at:
+http://thematicmapping.org/playground/webgl/earth/
+
+Step by step guide available at:
+https://blog.mastermaps.com/2013/09/creating-webgl-earth-with-threejs.html
