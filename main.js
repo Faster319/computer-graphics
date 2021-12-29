@@ -1,18 +1,9 @@
-import * as THREE from '../Common/build/three.module.js';
-//import { TrackballControls } from '../Common/examples/jsm/controls/TrackballControls.js';
-import { PointerLockControls } from '../Common/examples/jsm/controls/PointerLockControls.js';
+import * as THREE from '../Common/three/build/three.module.js';
+import * as CANNON from '../Common/cannon/build/cannon.js';
+import { PointerLockControls } from '../Common/three/examples/jsm/controls/PointerLockControls.js';
 
 
 let camera, controls, scene, renderer, canvas;
-
-let moveForward = false;
-let moveDown = false;
-let moveLeft = false;
-let moveRight = false;
-let canJump = false;
-let keys = [];
-
-
 
 function main() {
   canvas = document.getElementById( "gl-canvas" );
@@ -21,7 +12,18 @@ function main() {
   renderer = new THREE.WebGLRenderer({canvas});
   renderer.setPixelRatio(window.devicePixelRatio);
   renderer.setSize(window.innerWidth, window.innerHeight);
+
+  renderer.setClearColor(new THREE.Color(0x000000));
   renderer.shadowMap.enabled = true;
+
+  const fov = 75;
+  const aspect = window.innerWidth / window.innerHeight; 
+  const near = 0.1;
+  const far = 1000;
+  camera = new THREE.PerspectiveCamera(fov, aspect, near, far);
+
+  camera.position.y = 1;
+  camera.position.z = 2;
 
   const controls = new PointerLockControls(camera, renderer.domElement);
 
@@ -41,17 +43,32 @@ function main() {
     menuPanel.style.display = 'block';
   });
 
-  const fov = 75;
-  const aspect = window.innerWidth / window.innerHeight; 
-  const near = 0.1;
-  const far = 10;
-  camera = new THREE.PerspectiveCamera(fov, aspect, near, far);
-
-  camera.position.z = -10;
-
   // world
   scene = new THREE.Scene();
-  scene.background = new THREE.Color(0x828282);
+  
+      var spotLight = new THREE.SpotLight(0xffffff);
+      spotLight.position.copy(new THREE.Vector3(-10, 30, 40));
+      spotLight.shadow.mapSize.width = 2048;
+      spotLight.shadow.mapSize.height = 2048;
+      spotLight.shadow.camera.fov = 15;
+      spotLight.castShadow = true;
+      spotLight.decay = 2;
+      spotLight.penumbra = 0.05;
+      spotLight.name = "spotLight"
+
+      scene.add(spotLight);
+
+  var urls = [
+    '../Resources/clouds/east.bmp',
+    '../Resources/clouds/west.bmp',
+    '../Resources/clouds/up.bmp',
+    '../Resources/clouds/down.bmp',
+    '../Resources/clouds/north.bmp',
+    '../Resources/clouds/south.bmp'   
+  ];
+
+  var skyLoader = new THREE.CubeTextureLoader();
+  scene.background = skyLoader.load(urls);
 
   const planeGeometry = new THREE.PlaneGeometry(100, 100, 50, 50);
   const planeMaterial = new THREE.MeshBasicMaterial({color: 0x00ff00});
@@ -99,17 +116,27 @@ function main() {
 
 
   // Attach listeners to functions
-  renderer.domElement.addEventListener('keydown', keydown);
-  renderer.domElement.addEventListener('keyup', keyup);
+  const onKeyDown = function(event) {
+    switch (event.code) {
+      case 'KeyW':
+        controls.moveForward(0.25);
+        break;
 
-  function keydown(e) {
-    keys[e.key] = true;
+      case 'KeyA':
+        controls.moveRight(-0.25);
+        break;
+
+      case 'KeyS':
+        controls.moveForward(-0.25);
+        break;
+
+      case 'KeyD':
+        controls.moveRight(0.25);
+        break;
+    }
   }
-  function keyup(e) {
-    keys[e.key] = false;
-  }
 
-
+  document.addEventListener('keydown', onKeyDown, false);
 
   // lights
   const dirLight = new THREE.DirectionalLight(0xffffff, 1.1);
@@ -159,19 +186,6 @@ function onWindowResize() {
 
 function animate() {
   requestAnimationFrame(animate);
-
-  if (keys['w']) {
-    controls.moveForward(.1);
-  }
-  if(keys['s']){
-    controls.moveForward(-.1);
-    }
-  if(keys['a']){
-    controls.moveRight(-.1);
-  }
-  if(keys['d']){
-    controls.moveRight(.1);
-  }
 
   renderer.render(scene, camera);
 }
