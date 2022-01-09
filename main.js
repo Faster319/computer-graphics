@@ -2,7 +2,7 @@ import * as THREE from '../Common/three/build/three.module.js';
 import { PointerLockControls } from '../Common/three/examples/jsm/controls/PointerLockControls.js';
 import { GLTFLoader } from '../Common/three/examples/jsm/loaders/GLTFLoader.js';
 
-let camera, levelOne, levelTwo, overlay, renderer, canvas, controls, raycaster, cube, detect, rayLine;
+let camera, scene, levelOne, levelTwo, overlay, renderer, canvas, controls, raycaster, cube, detect, rayLine;
 
 const objects = [];
 
@@ -13,7 +13,7 @@ let moveLeft = false;
 let gameOver = false;
 let gameStarted = false;
 let levelOneCompleted = false;
-let minion;
+let minion, minionTwo;
 // let canJump = false;
 
 let prevTime = performance.now();
@@ -65,22 +65,8 @@ function main() {
 
   // world
   levelOne = new THREE.Scene();
-  // levelTwo = new THREE.Scene();
   overlay = new THREE.Scene();
-  overlay.background = new THREE.Color({color: "black"});
-
-  var spotLight = new THREE.SpotLight(0xffffff);
-  spotLight.position.copy(new THREE.Vector3(-10, 30, 40));
-  spotLight.shadow.mapSize.width = 2048;
-  spotLight.shadow.mapSize.height = 2048;
-  spotLight.shadow.camera.fov = 15;
-  spotLight.castShadow = true;
-  spotLight.decay = 2;
-  spotLight.penumbra = 0.05;
-  spotLight.name = "spotLight"
-
-  levelOne.add(spotLight);
-  //levelTwo.add(spotLight);
+  overlay.background = new THREE.Color({color: "black"});  
 
   var urls = [
     '../Resources/clouds/east.bmp',
@@ -91,9 +77,17 @@ function main() {
     '../Resources/clouds/south.bmp'   
   ];
 
+  // sky
   var skyLoader = new THREE.CubeTextureLoader();
   levelOne.background = skyLoader.load(urls);
-  //levelTwo.background = skyLoader.load(urls);
+  
+  // lights
+  const dirLight = new THREE.DirectionalLight(0xffffff, 1.1);
+  dirLight.position.set(0, 10, -5);
+  levelOne.add(dirLight);
+
+  const ambientLight = new THREE.AmbientLight(0xF22222, 2.0);
+  levelOne.add(ambientLight);
 
   // texture
   const textureBrick = new THREE.TextureLoader().load('../Resources/terracotta/Bricks_Terracotta.jpg');
@@ -101,12 +95,10 @@ function main() {
 
   // floor
   const floorGeometry = new THREE.PlaneGeometry(3000, 2000, 100, 100);
-  const floorMaterial = new THREE.MeshBasicMaterial({color: 0xFFFDD0});
-  const floor = new THREE.Mesh(floorGeometry, floorMaterial);
+  const floorMaterialCream = new THREE.MeshBasicMaterial({color: 0xFFFDD0});
+  const floor = new THREE.Mesh(floorGeometry, floorMaterialCream);
   floor.rotateX(-Math.PI/2);
   levelOne.add(floor);
-  //levelTwo.add(floor);
-
 
   // finishLine
   const finishLineGeo = new THREE.PlaneGeometry(10, 200);
@@ -115,27 +107,24 @@ function main() {
   finishLine.rotateX(-Math.PI/2);
   finishLine.position.set(740, 1, 0);
   levelOne.add(finishLine);
- //levelTwo.add(finishLine);
 
   // walls
   const wallGeometry = new THREE.BoxGeometry(1, 2000, 2000);
   const wallMaterial = new THREE.MeshPhongMaterial({map: textureBrick, bumpMap: bumpTexture, bumpScale: 5, side: THREE.DoubleSide});
-  const wallOne = new THREE.Mesh(wallGeometry, wallMaterial);
-  wallOne.rotateY(-Math.PI/2);
-  wallOne.position.set(100, 0, 100);
-  levelOne.add(wallOne);
-  //levelTwo.add(wallOne);
 
-  const wallTwo = new THREE.Mesh(wallGeometry, wallMaterial);
-  wallTwo.rotateY(-Math.PI/2);
-  wallTwo.position.set(100, 0, -100);
-  levelOne.add(wallTwo);
-  //levelTwo.add(wallTwo);
+  const leftWall = new THREE.Mesh(wallGeometry, wallMaterial);
+  leftWall.rotateY(-Math.PI/2);
+  leftWall.position.set(100, 0, 100);
+  levelOne.add(leftWall);
+
+  const rightWall = new THREE.Mesh(wallGeometry, wallMaterial);
+  rightWall.rotateY(-Math.PI/2);
+  rightWall.position.set(100, 0, -100);
+  levelOne.add(rightWall);
 
   const backWall = new THREE.Mesh(wallGeometry, wallMaterial);
   backWall.position.set(-100, 0, 0);
   levelOne.add(backWall);
-  //levelTwo.add(backWall);
   objects.push(backWall);
 
   // cube
@@ -144,7 +133,6 @@ function main() {
   cube = new THREE.Mesh(cubeGeometry, cubeMaterial);
   cube.position.set(1000, 0, 0);
   levelOne.add(cube);
-  //levelTwo.add(cube);
   objects.push(cube);
 
   const loader = new GLTFLoader();
@@ -154,15 +142,67 @@ function main() {
     gltf.scene.scale.set(20, 20, 20);
     gltf.scene.rotation.set(0, -Math.PI*(1/2),0);
 
-    levelOne.add(gltf.scene);
-    //levelTwo.add(gltf.scene);
     minion = gltf.scene;
+
+    levelOne.add(minion);
   }, undefined, function (error) {
     console.error(error);
   });
 
   levelOne.add(controls.getObject());
-  //levelTwo.add(controls.getObject());
+
+  /////////////////////////////////////////////////
+  //       Scene 2                               //
+  /////////////////////////////////////////////////
+  levelTwo = new THREE.Scene();
+
+  levelTwo.background = skyLoader.load(urls);
+
+  const floorMaterialRed = new THREE.MeshBasicMaterial({color: "red"});
+  const floorTwo = new THREE.Mesh(floorGeometry, floorMaterialRed);
+  floorTwo.rotateX(-Math.PI/2);
+  levelTwo.add(floorTwo);
+
+  const dirLightTwo = new THREE.DirectionalLight(0xffffff, 1.1);
+  dirLightTwo.position.set(0, 10, -5);
+  levelTwo.add(dirLightTwo);
+
+  const ambientLightTwo = new THREE.AmbientLight(0xF22222, 2.0);
+  levelTwo.add(ambientLightTwo);
+
+  const finishLineTwo = new THREE.Mesh(finishLineGeo, finishLineMat);
+  finishLineTwo.rotateX(-Math.PI/2);
+  finishLineTwo.position.set(740, 1, 0);
+  levelTwo.add(finishLineTwo);
+
+  const leftWallTwo = new THREE.Mesh(wallGeometry, wallMaterial);
+  leftWallTwo.rotateY(-Math.PI/2);
+  leftWallTwo.position.set(100, 0, 100);
+  levelTwo.add(leftWallTwo);
+
+  const rightWallTwo = new THREE.Mesh(wallGeometry, wallMaterial);
+  rightWallTwo.rotateY(-Math.PI/2);
+  rightWallTwo.position.set(100, 0, -100);
+  levelTwo.add(rightWallTwo);
+
+  const backWallTwo = new THREE.Mesh(wallGeometry, wallMaterial);
+  backWallTwo.position.set(-100, 0, 0);
+  levelTwo.add(backWallTwo);
+
+  const loaderTwo = new GLTFLoader();
+  loaderTwo.load('../GLTF_Models/minion_alone.glb', function (gltf){
+    
+    gltf.scene.position.set(750, 22, 0);
+    gltf.scene.scale.set(20, 20, 20);
+    gltf.scene.rotation.set(0, -Math.PI*(1/2),0);
+
+    minionTwo = gltf.scene;
+
+    levelTwo.add(minionTwo);
+  }, undefined, function (error) {
+    console.error(error);
+  });
+  // levelTwo.add(controls.getObject());
 
   // Attach listeners to functions
   const onKeyDown = function(event) {
@@ -210,15 +250,8 @@ function main() {
 
   raycaster = new THREE.Raycaster( new THREE.Vector3(), new THREE.Vector3( 0, - 1, 0 ), 0, 10 );
 
-  // lights
-  const dirLight = new THREE.DirectionalLight(0xffffff, 1.1);
-  dirLight.position.set(0, 10, -5);
-  levelOne.add(dirLight);
-  //levelTwo.add(dirLight);
-
-  const ambientLight = new THREE.AmbientLight(0xF22222, 2.0);
-  levelOne.add(ambientLight);
-  //h levelTwo.add(ambientLight);
+  // set levelOne as default scene
+  scene = levelOne;
 
   // listen to resize events
   window.addEventListener('resize', onWindowResize);
@@ -308,6 +341,10 @@ function animate() {
 
   checker();
 
+  if (levelOneCompleted) {
+    scene = levelTwo;
+  }
+
   if (controls.isLocked === true && gameStarted) {
     raycaster.ray.origin.copy(controls.getObject().position);
     raycaster.ray.origin.y -= 10;
@@ -328,8 +365,8 @@ function animate() {
     direction.normalize(); // this ensures consistent movements in all directions
 
     // normal speed 200
-    if (moveForward || moveBackward) velocity.z -= direction.z * 500.0 * delta;
-    if (moveLeft || moveRight) velocity.x -= direction.x * 500.0 * delta;
+    if (moveForward || moveBackward) velocity.z -= direction.z * 1000.0 * delta;
+    if (moveLeft || moveRight) velocity.x -= direction.x * 1000.0 * delta;
 
     if (onObject === true) {
 
@@ -352,13 +389,9 @@ function animate() {
   prevTime = time;
   renderer.render(overlay, camera);
   if (gameStarted) {
-    renderer.autoClear = false;
-    renderer.render(levelOne, camera);
+    //renderer.autoClear = false;
+    renderer.render(scene, camera);
 
-    // if (levelOneCompleted) {
-    //   renderer.autoClear = false;
-    //   renderer.render(levelTwo, camera);
-    // }
   }
 
 }
