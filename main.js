@@ -2,7 +2,9 @@ import * as THREE from '../Common/three/build/three.module.js';
 import { PointerLockControls } from '../Common/three/examples/jsm/controls/PointerLockControls.js';
 import { GLTFLoader } from '../Common/three/examples/jsm/loaders/GLTFLoader.js';
 
-let camera, scene, levelOne, levelTwo, overlay, renderer, canvas, controls, raycaster, cube, detect, rayLine;
+let camera, scene, levelOne, levelTwo, overlay, renderer, canvas, controls, controls2, raycaster, cube, detect;
+
+let deathSound, backgroundTheme;
 
 const objects = [];
 
@@ -12,9 +14,7 @@ let moveRight = false;
 let moveLeft = false;
 let gameOver = false;
 let gameStarted = false;
-let levelOneCompleted = false;
-let minion, minionTwo;
-// let canJump = false;
+let doll, minionTwo;
 
 let prevTime = performance.now();
 const velocity = new THREE.Vector3();
@@ -36,22 +36,35 @@ function main() {
   renderer.setClearColor(new THREE.Color(0x000000));
   renderer.shadowMap.enabled = true;
 
-  const fov = 75;
-  const aspect = window.innerWidth / window.innerHeight; 
-  const near = 0.1;
-  const far = 1500;
-  camera = new THREE.PerspectiveCamera(fov, aspect, near, far);
-  camera.lookAt(50, 50, 0);
+  // camera
+  camera = new THREE.PerspectiveCamera(75, window.innerWidth / window.innerHeight, 0.1, 1500);
+  //camera.lookAt(50, 50, 0);
 
   controls = new PointerLockControls(camera, document.body);
 
+  // music
+  backgroundTheme = new Audio('./Sounds/theme.mp3');
+  deathSound = new Audio('./Sounds/death.mp3');
+  backgroundTheme.loop = true;
+
   // menu
   const menuPanel = document.getElementById('menuPanel');
-  const startButton = document.getElementById('startButton');
+  const level1Button = document.getElementById('level1Button');
+  const level2Button = document.getElementById('level2Button');
 
-  startButton.addEventListener('click', function(){
+  level1Button.addEventListener('click', function(){
+    scene = levelOne;
     controls.lock();
     text.innerText = "Welcome to Squid Game!"
+    backgroundTheme.play();
+    loading();
+  });
+
+  level2Button.addEventListener('click', function(){
+    scene = levelTwo;
+    controls.lock();
+    text.innerText = "Welcome to Squid Game!"
+    backgroundTheme.play();
     loading();
   });
 
@@ -67,6 +80,21 @@ function main() {
   levelOne = new THREE.Scene();
   overlay = new THREE.Scene();
   overlay.background = new THREE.Color({color: "black"});  
+
+  // cube
+  const cubeGeometry = new THREE.BoxGeometry(1, 1, 1);
+  const cubeMaterial = new THREE.MeshBasicMaterial({color: 0xFF0000});
+  cube = new THREE.Mesh(cubeGeometry, cubeMaterial);
+  //levelOne.add(cube);
+  cube.scale.set(50, 50, 50);
+  levelOne.add(cube);
+  objects.push(cube);
+
+  cube.position.set(50, 10, 0);
+  camera.add(cube);
+
+
+  controls2 = new PointerLockControls(cube, document.body);
 
   var urls = [
     '../Resources/clouds/east.bmp',
@@ -86,17 +114,25 @@ function main() {
   dirLight.position.set(0, 10, -5);
   levelOne.add(dirLight);
 
-  const ambientLight = new THREE.AmbientLight(0xF22222, 2.0);
-  levelOne.add(ambientLight);
+  // const ambientLight = new THREE.AmbientLight(0xF22222, 2.0);
+  // levelOne.add(ambientLight);
+
+  const spotLight = new THREE.SpotLight(0xffffff, 0.1);
+  levelOne.add(spotLight);
+  levelOne.add(spotLight.target);
+
+  spotLight.position.set(-85, 100, -90);
+  spotLight.target.position.set(750, 0, 0);
 
   // texture
   const textureBrick = new THREE.TextureLoader().load('../Resources/terracotta/Bricks_Terracotta.jpg');
   const bumpTexture = new THREE.TextureLoader().load('../Resources/terracotta/Bricks_Terracotta_002_height.png');
+  const floorTexture = new THREE.TextureLoader().load('../Resources/floor/beach.jpg');
 
   // floor
   const floorGeometry = new THREE.PlaneGeometry(3000, 2000, 100, 100);
-  const floorMaterialCream = new THREE.MeshBasicMaterial({color: 0xFFFDD0});
-  const floor = new THREE.Mesh(floorGeometry, floorMaterialCream);
+  const floorMaterial = new THREE.MeshPhongMaterial({map: floorTexture});
+  const floor = new THREE.Mesh(floorGeometry, floorMaterial);
   floor.rotateX(-Math.PI/2);
   levelOne.add(floor);
 
@@ -127,34 +163,34 @@ function main() {
   levelOne.add(backWall);
   objects.push(backWall);
 
-  // cube
-  const cubeGeometry = new THREE.BoxGeometry(1, 1, 1);
-  const cubeMaterial = new THREE.MeshBasicMaterial({color: 0xFF0000});
-  cube = new THREE.Mesh(cubeGeometry, cubeMaterial);
-  cube.position.set(1000, 0, 0);
-  levelOne.add(cube);
-  objects.push(cube);
-
   const loader = new GLTFLoader();
-  loader.load('../GLTF_Models/minion_alone.glb', function (gltf){
+  loader.load('../GLTF_Models/scene.gltf', function (gltf){
     
-    gltf.scene.position.set(750, 22, 0);
-    gltf.scene.scale.set(20, 20, 20);
+    gltf.scene.position.set(750, 0, 0);
+    gltf.scene.scale.set(60, 60, 60);
     gltf.scene.rotation.set(0, -Math.PI*(1/2),0);
 
-    minion = gltf.scene;
+    doll = gltf.scene;
 
-    levelOne.add(minion);
+    levelOne.add(doll);
   }, undefined, function (error) {
     console.error(error);
   });
 
   levelOne.add(controls.getObject());
+  levelOne.add(controls2.getObject());
 
   /////////////////////////////////////////////////
-  //       Scene 2                               //
+  //       Level 2                               //
   /////////////////////////////////////////////////
   levelTwo = new THREE.Scene();
+
+  // camera
+  camera = new THREE.PerspectiveCamera(75, window.innerWidth / window.innerHeight, 0.1, 1500);
+  camera.lookAt(50, 50, 0);
+
+  controls = new PointerLockControls(camera, document.body);
+  //controls2 = new PointerLockControls(cube, document.body);
 
   levelTwo.background = skyLoader.load(urls);
 
@@ -190,7 +226,7 @@ function main() {
   levelTwo.add(backWallTwo);
 
   const loaderTwo = new GLTFLoader();
-  loaderTwo.load('../GLTF_Models/minion_alone.glb', function (gltf){
+  loaderTwo.load('../GLTF_Models/scene.gltf', function (gltf){
     
     gltf.scene.position.set(750, 22, 0);
     gltf.scene.scale.set(20, 20, 20);
@@ -210,15 +246,12 @@ function main() {
       case 'KeyW':
         moveForward = true;
         break;
-
       case 'KeyA':
         moveLeft = true;
         break;
-
       case 'KeyS':
         moveBackward = true;
         break;
-
       case 'KeyD':
         moveRight = true;
         break;
@@ -230,15 +263,12 @@ function main() {
       case 'KeyW':
         moveForward = false;
         break;
-
       case 'KeyA':
         moveLeft = false;
         break;
-
       case 'KeyS':
         moveBackward = false;
         break;
-
       case 'KeyD':
         moveRight = false;
         break;
@@ -249,9 +279,6 @@ function main() {
   document.addEventListener('keyup', onKeyUp);
 
   raycaster = new THREE.Raycaster( new THREE.Vector3(), new THREE.Vector3( 0, - 1, 0 ), 0, 10 );
-
-  // set levelOne as default scene
-  scene = levelOne;
 
   // listen to resize events
   window.addEventListener('resize', onWindowResize);
@@ -278,10 +305,8 @@ async function loading() {
   await delay(1000);
   text.innerText = "Starting in 1";
   await delay(1000);
-  text.innerText = "Begin!!";
   gameStarted = true;
-  await delay(2000);
-  text.innerText = "Get to the end without Steve catching you!";
+  text.innerText = "Begin!! Get to the end without Steve catching you!";
   startGame();
 }
 
@@ -297,12 +322,14 @@ async function startGame() {
 }
 
 function redLight() {
-  gsap.to(minion.rotation, {duration: .45, y: -Math.PI*(1/2)});
+  gsap.to(doll.rotation, {duration: .45, y: -Math.PI*(1/2)});
+  gsap.to(minionTwo.rotation, {duration: .45, y: -Math.PI*(1/2)});
   cube.material.color.set("red");
 }
 
 function greenLight() {
-  gsap.to(minion.rotation, {duration: .45, y: Math.PI*(1/2)})
+  gsap.to(doll.rotation, {duration: .45, y: Math.PI*(1/2)});
+  gsap.to(minionTwo.rotation, {duration: .45, y: -Math.PI*(1/2)});
   cube.material.color.set("green");
 }
 
@@ -310,9 +337,8 @@ function checker() {
   if (camera.position.x > 743) {
     if (!gameOver) {
       text.innerText = "You Win!";
-      levelOneCompleted = true;
       // Go to next level
-      camera.position.set(0, 10, 0);
+      //camera.position.set(0, 10, 0);
     }
   }
   //console.log(camera.position.x + ',' + camera.position.y + ',' + camera.position.z);
@@ -324,28 +350,33 @@ function checker() {
 
   if (detect && !gameOver) {
     if (moveForward || moveLeft || moveRight || moveBackward) {
+      deathSound.play();
       text.innerText = "You Lose!";
-      gameOver = true;
+      //gameOver = true;
 
       // Restart scene
-      camera.position.set(0, 10, 0);
+      //camera.position.set(0, 10, 0);
       text.innerText = "Try again!";
-      return;
+      //return;
     }
   }
 }
+
+// function thirdPerson() {
+//   cube.position.set(camera.position.x + 50, camera.position.y, camera.position.z);
+//   console.log('CAMERA ' + camera.position.x + ',' + camera.position.y + ',' + camera.position.z);
+//   console.log('CUBE ' + cube.position.x + ',' + cube.position.y + ',' + cube.position.z);
+// }
  
 function animate() {
   requestAnimationFrame(animate);
   const time = performance.now();
 
+  //thirdPerson();
+
   checker();
 
-  if (levelOneCompleted) {
-    scene = levelTwo;
-  }
-
-  if (controls.isLocked === true && gameStarted) {
+  if (controls.isLocked === true && gameStarted && controls2.isLocked === true) {
     raycaster.ray.origin.copy(controls.getObject().position);
     raycaster.ray.origin.y -= 10;
       
@@ -365,24 +396,29 @@ function animate() {
     direction.normalize(); // this ensures consistent movements in all directions
 
     // normal speed 200
-    if (moveForward || moveBackward) velocity.z -= direction.z * 1000.0 * delta;
-    if (moveLeft || moveRight) velocity.x -= direction.x * 1000.0 * delta;
+    if (moveForward || moveBackward) velocity.z -= direction.z * 10.0 * delta;
+    if (moveLeft || moveRight) velocity.x -= direction.x * 10.0 * delta;
 
     if (onObject === true) {
-
       velocity.y = Math.max(0, velocity.y);
-
     }
 
     controls.moveRight(- velocity.x * delta);
     controls.moveForward(- velocity.z * delta);
-
     controls.getObject().position.y += (velocity.y * delta); // new behavior
 
     if (controls.getObject().position.y < 10) {
-
       velocity.y = 0;
       controls.getObject().position.y = 10;
+    }
+
+    controls2.moveRight(- velocity.x * delta);
+    controls2.moveForward(- velocity.z * delta);
+    controls2.getObject().position.y += (velocity.y * delta); // new behavior
+
+    if (controls2.getObject().position.y < 10) {
+      velocity.y = 0;
+      controls2.getObject().position.y = 10;
     }
   }
 
