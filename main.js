@@ -8,13 +8,14 @@ let deathSound, backgroundTheme;
 
 const objects = [];
 
+let firstPerson = true;
 let moveForward = false;
 let moveBackward = false;
 let moveRight = false;
 let moveLeft = false;
 let gameOver = false;
 let gameStarted = false;
-let doll, minionTwo;
+let doll, player, minionTwo;
 
 let prevTime = performance.now();
 const velocity = new THREE.Vector3();
@@ -81,6 +82,32 @@ function main() {
   overlay = new THREE.Scene();
   overlay.background = new THREE.Color({color: "black"});  
 
+  // models
+  const loader = new GLTFLoader();
+  loader.load('../GLTF_Models/doll/scene.gltf', function (gltf){
+    
+    gltf.scene.position.set(750, 0, 0);
+    gltf.scene.scale.set(60, 60, 60);
+    gltf.scene.rotation.set(0, -Math.PI*(1/2),0);
+
+    doll = gltf.scene;
+
+    levelOne.add(doll);
+  }, undefined, function (error) {
+    console.error(error);
+  });
+  // loader.load('../GLTF_Models/player/scene.gltf', function (gltf){
+
+  //   gltf.scene.position.set(50, 10, 0);
+  //   gltf.scene.scale.set(50, 50, 50);
+  //   player = gltf.scene;
+
+  //   levelOne.add(player);
+  // }, undefined, function (error) {
+  //   console.error(error);
+  // });
+  // camera.add(player);
+
   // cube
   const cubeGeometry = new THREE.BoxGeometry(1, 1, 1);
   const cubeMaterial = new THREE.MeshBasicMaterial({color: 0xFF0000});
@@ -93,8 +120,8 @@ function main() {
   cube.position.set(50, 10, 0);
   camera.add(cube);
 
-
-  controls2 = new PointerLockControls(cube, document.body);
+  // Third person
+  controls2 = new PointerLockControls(player, document.body);
 
   var urls = [
     '../Resources/clouds/east.bmp',
@@ -163,20 +190,6 @@ function main() {
   levelOne.add(backWall);
   objects.push(backWall);
 
-  const loader = new GLTFLoader();
-  loader.load('../GLTF_Models/scene.gltf', function (gltf){
-    
-    gltf.scene.position.set(750, 0, 0);
-    gltf.scene.scale.set(60, 60, 60);
-    gltf.scene.rotation.set(0, -Math.PI*(1/2),0);
-
-    doll = gltf.scene;
-
-    levelOne.add(doll);
-  }, undefined, function (error) {
-    console.error(error);
-  });
-
   levelOne.add(controls.getObject());
   levelOne.add(controls2.getObject());
 
@@ -226,7 +239,7 @@ function main() {
   levelTwo.add(backWallTwo);
 
   const loaderTwo = new GLTFLoader();
-  loaderTwo.load('../GLTF_Models/scene.gltf', function (gltf){
+  loaderTwo.load('../GLTF_Models/doll/scene.gltf', function (gltf){
     
     gltf.scene.position.set(750, 22, 0);
     gltf.scene.scale.set(20, 20, 20);
@@ -241,8 +254,15 @@ function main() {
   // levelTwo.add(controls.getObject());
 
   // Attach listeners to functions
-  const onKeyDown = function(event) {
-    switch (event.code) {
+  const onKeyDown = function(e) {
+    switch (e.code) {
+      case 'KeyC':
+        if (firstPerson) {
+          firstPerson = false;
+        } else {
+          firstPerson = true;
+        }
+        break;
       case 'KeyW':
         moveForward = true;
         break;
@@ -258,8 +278,8 @@ function main() {
     }
   }
 
-  const onKeyUp = function(event) {
-    switch (event.code) {
+  const onKeyUp = function(e) {
+    switch (e.code) {
       case 'KeyW':
         moveForward = false;
         break;
@@ -362,17 +382,19 @@ function checker() {
   }
 }
 
-// function thirdPerson() {
-//   cube.position.set(camera.position.x + 50, camera.position.y, camera.position.z);
-//   console.log('CAMERA ' + camera.position.x + ',' + camera.position.y + ',' + camera.position.z);
-//   console.log('CUBE ' + cube.position.x + ',' + cube.position.y + ',' + cube.position.z);
-// }
+function thirdPerson() {
+  camera.position.set(cube.position.x - 50, cube.position.y, cube.position.z);
+  console.log('CAMERA ' + camera.position.x + ',' + camera.position.y + ',' + camera.position.z);
+  console.log('CUBE ' + cube.position.x + ',' + cube.position.y + ',' + cube.position.z);
+}
  
 function animate() {
   requestAnimationFrame(animate);
   const time = performance.now();
 
-  //thirdPerson();
+  if (!firstPerson) {
+    thirdPerson();
+  }
 
   checker();
 
@@ -396,30 +418,33 @@ function animate() {
     direction.normalize(); // this ensures consistent movements in all directions
 
     // normal speed 200
-    if (moveForward || moveBackward) velocity.z -= direction.z * 10.0 * delta;
-    if (moveLeft || moveRight) velocity.x -= direction.x * 10.0 * delta;
+    if (moveForward || moveBackward) velocity.z -= direction.z * 100.0 * delta;
+    if (moveLeft || moveRight) velocity.x -= direction.x * 100.0 * delta;
 
     if (onObject === true) {
       velocity.y = Math.max(0, velocity.y);
     }
 
-    controls.moveRight(- velocity.x * delta);
-    controls.moveForward(- velocity.z * delta);
-    controls.getObject().position.y += (velocity.y * delta); // new behavior
+    if (firstPerson) {
+      controls.moveRight(- velocity.x * delta);
+      controls.moveForward(- velocity.z * delta);
+      controls.getObject().position.y += (velocity.y * delta); // new behavior
 
-    if (controls.getObject().position.y < 10) {
-      velocity.y = 0;
-      controls.getObject().position.y = 10;
+      if (controls.getObject().position.y < 10) {
+        velocity.y = 0;
+        controls.getObject().position.y = 10;
+      }
+    } else {
+      controls2.moveRight(- velocity.x * delta);
+      controls2.moveForward(- velocity.z * delta);
+      controls2.getObject().position.y += (velocity.y * delta); // new behavior
+  
+      if (controls2.getObject().position.y < 10) {
+        velocity.y = 0;
+        controls2.getObject().position.y = 10;
+      }
     }
 
-    controls2.moveRight(- velocity.x * delta);
-    controls2.moveForward(- velocity.z * delta);
-    controls2.getObject().position.y += (velocity.y * delta); // new behavior
-
-    if (controls2.getObject().position.y < 10) {
-      velocity.y = 0;
-      controls2.getObject().position.y = 10;
-    }
   }
 
   prevTime = time;
