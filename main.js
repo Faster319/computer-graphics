@@ -6,8 +6,6 @@ let camera, scene, levelOne, levelTwo, overlay, renderer, canvas, controls, cont
 
 let deathSound, backgroundTheme;
 
-const objects = [];
-
 let firstPerson = true;
 let moveForward = false;
 let moveBackward = false;
@@ -38,7 +36,7 @@ function main() {
   renderer.shadowMap.enabled = true;
 
   // camera
-  camera = new THREE.PerspectiveCamera(75, window.innerWidth / window.innerHeight, 0.1, 1500);
+  camera = new THREE.PerspectiveCamera(75, window.innerWidth / window.innerHeight, 1, 4500);
   //camera.lookAt(50, 50, 0);
 
   controls = new PointerLockControls(camera, document.body);
@@ -84,11 +82,12 @@ function main() {
 
   // models
   const loader = new GLTFLoader();
+  // doll
   loader.load('../GLTF_Models/doll/scene.gltf', function (gltf){
     
     gltf.scene.position.set(750, 0, 0);
     gltf.scene.scale.set(60, 60, 60);
-    gltf.scene.rotation.set(0, -Math.PI*(1/2),0);
+    gltf.scene.rotation.set(0, -Math.PI*(1/2), 0);
 
     doll = gltf.scene;
 
@@ -96,10 +95,12 @@ function main() {
   }, undefined, function (error) {
     console.error(error);
   });
+  // lampost
   loader.load('../GLTF_Models/lampost/lampost.glb', function (gltf){
 
-    gltf.scene.position.set(50, 10, 0);
-    gltf.scene.scale.set(0.5, 0.5, 0.5);
+    gltf.scene.position.set(-85, 0, -90);
+    gltf.scene.scale.set(6, 6, 6);
+    gltf.scene.rotation.set(0, -2.2, 0);
     post = gltf.scene;
 
     levelOne.add(post);
@@ -115,7 +116,6 @@ function main() {
   //levelOne.add(cube);
   cube.scale.set(50, 50, 50);
   levelOne.add(cube);
-  objects.push(cube);
 
   cube.position.set(500, 100, 100);
   camera.add(cube);
@@ -141,20 +141,25 @@ function main() {
   dirLight.position.set(0, 10, -5);
   levelOne.add(dirLight);
 
-  // const ambientLight = new THREE.AmbientLight(0xF22222, 2.0);
-  // levelOne.add(ambientLight);
+  const ambientLight = new THREE.AmbientLight(0xffffff, 1.0);
+  levelOne.add(ambientLight);
 
-  const spotLight = new THREE.SpotLight(0xffffff, 0.1);
+  const spotLight = new THREE.SpotLight(0xffffff, 1);
   levelOne.add(spotLight);
   levelOne.add(spotLight.target);
 
-  spotLight.position.set(-85, 100, -90);
-  spotLight.target.position.set(750, 0, 0);
+  spotLight.position.set(-80, 200, -90);
+  spotLight.target.position.set(0, 0, 0);
 
   // texture
-  const textureBrick = new THREE.TextureLoader().load('../Resources/terracotta/Bricks_Terracotta.jpg');
-  const bumpTexture = new THREE.TextureLoader().load('../Resources/terracotta/Bricks_Terracotta_002_height.png');
+  // const textureBrick = new THREE.TextureLoader().load('../Resources/terracotta/Bricks_Terracotta.jpg');
+  // const bumpTexture = new THREE.TextureLoader().load('../Resources/terracotta/Bricks_Terracotta_002_height.png');
   const floorTexture = new THREE.TextureLoader().load('../Resources/floor/beach.jpg');
+  const wallTexture = new THREE.TextureLoader().load('../Resources/wall/texture.png');
+  wallTexture.wrapS = THREE.RepeatWrapping;
+  wallTexture.wrapT = THREE.RepeatWrapping;
+  wallTexture.repeat.set(3, 2);
+
 
   // floor
   const floorGeometry = new THREE.PlaneGeometry(3000, 2000, 100, 100);
@@ -164,7 +169,7 @@ function main() {
   levelOne.add(floor);
 
   // finishLine
-  const finishLineGeo = new THREE.PlaneGeometry(10, 200);
+  const finishLineGeo = new THREE.PlaneGeometry(10, 2000);
   const finishLineMat = new THREE.MeshBasicMaterial({color: "red"});
   const finishLine = new THREE.Mesh(finishLineGeo, finishLineMat);
   finishLine.rotateX(-Math.PI/2);
@@ -173,22 +178,26 @@ function main() {
 
   // walls
   const wallGeometry = new THREE.BoxGeometry(1, 2000, 2000);
-  const wallMaterial = new THREE.MeshPhongMaterial({map: textureBrick, bumpMap: bumpTexture, bumpScale: 5, side: THREE.DoubleSide});
+  // const wallMaterial = new THREE.MeshPhongMaterial({map: textureBrick, bumpMap: bumpTexture, bumpScale: 5, side: THREE.DoubleSide});
+  const wallMaterial = new THREE.MeshPhongMaterial({map: wallTexture, side: THREE.DoubleSide});
 
   const leftWall = new THREE.Mesh(wallGeometry, wallMaterial);
   leftWall.rotateY(-Math.PI/2);
-  leftWall.position.set(100, 0, 100);
+  leftWall.position.set(100, 0, 1000);
   levelOne.add(leftWall);
 
   const rightWall = new THREE.Mesh(wallGeometry, wallMaterial);
   rightWall.rotateY(-Math.PI/2);
-  rightWall.position.set(100, 0, -100);
+  rightWall.position.set(100, 0, -1000);
   levelOne.add(rightWall);
 
   const backWall = new THREE.Mesh(wallGeometry, wallMaterial);
   backWall.position.set(-100, 0, 0);
   levelOne.add(backWall);
-  objects.push(backWall);
+
+  const frontWall = new THREE.Mesh(wallGeometry, wallMaterial);
+  frontWall.position.set(1000, 0, 0);
+  levelOne.add(frontWall);
 
   levelOne.add(controls.getObject());
   levelOne.add(controls2.getObject());
@@ -199,7 +208,7 @@ function main() {
   levelTwo = new THREE.Scene();
 
   // camera
-  camera = new THREE.PerspectiveCamera(75, window.innerWidth / window.innerHeight, 0.1, 1500);
+  camera = new THREE.PerspectiveCamera(75, window.innerWidth / window.innerHeight, 1, 4500);
   camera.lookAt(50, 50, 0);
 
   controls = new PointerLockControls(camera, document.body);
@@ -243,7 +252,7 @@ function main() {
     
     gltf.scene.position.set(750, 22, 0);
     gltf.scene.scale.set(20, 20, 20);
-    gltf.scene.rotation.set(0, -Math.PI*(1/2),0);
+    gltf.scene.rotation.set(0, -Math.PI*(1/2), 0);
 
     minionTwo = gltf.scene;
 
@@ -399,12 +408,6 @@ function animate() {
   checker();
 
   if (controls.isLocked === true && gameStarted && controls2.isLocked === true) {
-    raycaster.ray.origin.copy(controls.getObject().position);
-    raycaster.ray.origin.y -= 10;
-      
-    const intersections = raycaster.intersectObjects(objects, false);
-
-    const onObject = intersections.length > 0;
 
     const delta = (time - prevTime) / 1000;
 
@@ -418,12 +421,8 @@ function animate() {
     direction.normalize(); // this ensures consistent movements in all directions
 
     // normal speed 200
-    if (moveForward || moveBackward) velocity.z -= direction.z * 100.0 * delta;
-    if (moveLeft || moveRight) velocity.x -= direction.x * 100.0 * delta;
-
-    if (onObject === true) {
-      velocity.y = Math.max(0, velocity.y);
-    }
+    if (moveForward || moveBackward) velocity.z -= direction.z * 1000.0 * delta;
+    if (moveLeft || moveRight) velocity.x -= direction.x * 1000.0 * delta;
 
     if (firstPerson) {
       controls.moveRight(- velocity.x * delta);
