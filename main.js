@@ -15,7 +15,7 @@ let moveRight = false;
 let moveLeft = false;
 let gameOver = false;
 let gameStarted = false;
-let doll, player, minionTwo;
+let doll, minionTwo, post;
 
 let prevTime = performance.now();
 const velocity = new THREE.Vector3();
@@ -96,16 +96,16 @@ function main() {
   }, undefined, function (error) {
     console.error(error);
   });
-  // loader.load('../GLTF_Models/player/scene.gltf', function (gltf){
+  loader.load('../GLTF_Models/lampost/lampost.glb', function (gltf){
 
-  //   gltf.scene.position.set(50, 10, 0);
-  //   gltf.scene.scale.set(50, 50, 50);
-  //   player = gltf.scene;
+    gltf.scene.position.set(50, 10, 0);
+    gltf.scene.scale.set(0.5, 0.5, 0.5);
+    post = gltf.scene;
 
-  //   levelOne.add(player);
-  // }, undefined, function (error) {
-  //   console.error(error);
-  // });
+    levelOne.add(post);
+  }, undefined, function (error) {
+    console.error(error);
+  });
   // camera.add(player);
 
   // cube
@@ -117,11 +117,11 @@ function main() {
   levelOne.add(cube);
   objects.push(cube);
 
-  cube.position.set(50, 10, 0);
+  cube.position.set(500, 100, 100);
   camera.add(cube);
 
   // Third person
-  controls2 = new PointerLockControls(player, document.body);
+  controls2 = new PointerLockControls(cube, document.body);
 
   var urls = [
     '../Resources/clouds/east.bmp',
@@ -326,7 +326,7 @@ async function loading() {
   text.innerText = "Starting in 1";
   await delay(1000);
   gameStarted = true;
-  text.innerText = "Begin!! Get to the end without Steve catching you!";
+  text.innerText = "Begin!! Get to the end without the doll catching you!";
   startGame();
 }
 
