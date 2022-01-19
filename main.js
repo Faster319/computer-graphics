@@ -13,7 +13,8 @@ let moveRight = false;
 let moveLeft = false;
 let gameOver = false;
 let gameStarted = false;
-let doll, minionTwo, post;
+
+let doll, minionTwo;
 
 let prevTime = performance.now();
 const velocity = new THREE.Vector3();
@@ -81,6 +82,8 @@ function main() {
   overlay.background = new THREE.Color({color: "black"});  
 
   // models
+  const post = new THREE.Object3D();
+  const post2 = new THREE.Object3D();
   const loader = new GLTFLoader();
   // doll
   loader.load('../GLTF_Models/doll/scene.gltf', function (gltf){
@@ -98,16 +101,23 @@ function main() {
   // lampost
   loader.load('../GLTF_Models/lampost/lampost.glb', function (gltf){
 
-    gltf.scene.position.set(-85, 0, -90);
-    gltf.scene.scale.set(6, 6, 6);
-    gltf.scene.rotation.set(0, -2.2, 0);
-    post = gltf.scene;
+    post.add(gltf.scene);
+    post2.add(gltf.scene.clone());
 
-    levelOne.add(post);
+    //levelOne.add(post);
   }, undefined, function (error) {
     console.error(error);
   });
-  // camera.add(player);
+  // clone lamposts
+  post.position.set(-85, 0, -90);
+  post.scale.set(6, 6, 6);
+  post.rotation.set(0, -2.2, 0);
+  levelOne.add(post);
+
+  post2.position.set(-50, 0, 0);
+  post2.scale.set(6, 6, 6);
+  post2.rotation.set(0, -2.2, 0);
+  levelOne.add(post2);
 
   // cube
   const cubeGeometry = new THREE.BoxGeometry(1, 1, 1);
@@ -152,14 +162,11 @@ function main() {
   spotLight.target.position.set(0, 0, 0);
 
   // texture
-  // const textureBrick = new THREE.TextureLoader().load('../Resources/terracotta/Bricks_Terracotta.jpg');
-  // const bumpTexture = new THREE.TextureLoader().load('../Resources/terracotta/Bricks_Terracotta_002_height.png');
   const floorTexture = new THREE.TextureLoader().load('../Resources/floor/beach.jpg');
   const wallTexture = new THREE.TextureLoader().load('../Resources/wall/texture.png');
   wallTexture.wrapS = THREE.RepeatWrapping;
   wallTexture.wrapT = THREE.RepeatWrapping;
   wallTexture.repeat.set(3, 2);
-
 
   // floor
   const floorGeometry = new THREE.PlaneGeometry(3000, 2000, 100, 100);
@@ -178,7 +185,6 @@ function main() {
 
   // walls
   const wallGeometry = new THREE.BoxGeometry(1, 2000, 2000);
-  // const wallMaterial = new THREE.MeshPhongMaterial({map: textureBrick, bumpMap: bumpTexture, bumpScale: 5, side: THREE.DoubleSide});
   const wallMaterial = new THREE.MeshPhongMaterial({map: wallTexture, side: THREE.DoubleSide});
 
   const leftWall = new THREE.Mesh(wallGeometry, wallMaterial);
