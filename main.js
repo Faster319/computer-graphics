@@ -1,6 +1,7 @@
 import * as THREE from '../Common/three/build/three.module.js';
 import { PointerLockControls } from '../Common/three/examples/jsm/controls/PointerLockControls.js';
 import { GLTFLoader } from '../Common/three/examples/jsm/loaders/GLTFLoader.js';
+import { RoomEnvironment } from '../Common/three/examples/jsm/environments/RoomEnvironment.js';
 
 let camera, scene, levelOne, levelTwo, overlay, renderer, canvas, controls, controls2, raycaster, cube, detect;
 
@@ -35,6 +36,16 @@ function main() {
   renderer.setClearColor(new THREE.Color(0x000000));
   renderer.shadowMap.enabled = true;
 
+  // world
+  levelOne = new THREE.Scene();
+  overlay = new THREE.Scene();
+  overlay.background = new THREE.Color({color: "black"});  
+
+  // room env
+  const environment = new RoomEnvironment();
+  const pmremGenerator = new THREE.PMREMGenerator(renderer);
+  levelOne.environment = pmremGenerator.fromScene(environment).texture;
+
   // camera
   camera = new THREE.PerspectiveCamera(75, window.innerWidth / window.innerHeight, 1, 4500);
   //camera.lookAt(50, 50, 0);
@@ -42,7 +53,6 @@ function main() {
   // player
   player = new THREE.Object3D();
   const loader = new GLTFLoader();
-  levelOne = new THREE.Scene();
   loader.load('../GLTF_Models/player/scene.gltf', function (gltf){
 
     player.add(gltf.scene);
@@ -57,6 +67,10 @@ function main() {
   player.visible = false;
 
   controls = new PointerLockControls(player, document.body);
+
+  renderer.toneMapping = THREE.ACESFilmicToneMapping;
+  renderer.toneMappingExposure = 1.2;
+  renderer.outputEncoding = THREE.sRGBEncoding;
 
   // music
   backgroundTheme = new Audio('./Sounds/theme.mp3');
@@ -91,10 +105,6 @@ function main() {
   controls.addEventListener('unlock', function() {
     menuPanel.style.display = 'block';
   });
-
-  // world
-  overlay = new THREE.Scene();
-  overlay.background = new THREE.Color({color: "black"});  
 
   // models
   const post = new THREE.Object3D();
@@ -143,12 +153,12 @@ function main() {
   const ambientLight = new THREE.AmbientLight(0xffffff, 1.0);
   levelOne.add(ambientLight);
 
-  const spotLight = new THREE.SpotLight(0xffffff, 1);
-  levelOne.add(spotLight);
-  levelOne.add(spotLight.target);
+  const spotLight = new THREE.SpotLight(0xffffff, 0.5, {distance: 1});
 
-  spotLight.position.set(-80, 200, -90);
-  spotLight.target.position.set(0, 0, 0);
+  spotLight.position.set(-50, 200, -63);
+  //spotLight.target.position.set(750, 0, 0);
+  levelOne.add(spotLight);
+  //levelOne.add(spotLight.target);
 
   // texture
   const floorTexture = new THREE.TextureLoader().load('../Resources/floor/beach.jpg');
@@ -388,11 +398,11 @@ function checker() {
   }
 }
 
-function thirdPersonCam(event) {
-  //camera.position.set(player.position.x - 50, player.position.y, player.position.z);
-  //const camDir = camera.getWorldDirection();
-
+function thirdPersonCam() {
   player.position.set(camera.position.x + 50, 0, camera.position.z);
+
+  // var direction = player.position.clone().sub(camera.position).normalize();
+  // player.position.add(direction.clone().multiplyScalar(10));
 
   console.log('CAMERA ' + camera.position.x + ',' + camera.position.y + ',' + camera.position.z);
   console.log('PLAYER ' + player.position.x + ',' + player.position.y + ',' + player.position.z);
@@ -414,40 +424,17 @@ function animate() {
 
   checker();
 
-
-
   if (controls.isLocked === true && gameStarted) {
 
     const delta = (time - prevTime) / 1000;
 
-    // 10 first person, 100 third person
-
-    if (firstPerson) {
-      velocity.x -= velocity.x * 10.0 * delta;
-      velocity.z -= velocity.z * 10.0 * delta;
-    } else {
-      velocity.x -= velocity.x * 10.0 * delta;
-      velocity.z -= velocity.z * 10.0 * delta;
-    }
-
-    //velocity.y -= 9.8 * 100.0 * delta; // 100.0 = mass
-
+    velocity.x -= velocity.x * 10.0 * delta;
+    velocity.z -= velocity.z * 10.0 * delta;
+    
     direction.z = Number(moveForward) - Number(moveBackward);
     direction.x = Number(moveRight) - Number(moveLeft);
     direction.normalize(); // this ensures consistent movements in all directions
 
-    // normal speed 200
-    // if ((moveForward || moveBackward) && firstPerson) {
-    //   velocity.z -= direction.z * 1000.0 * delta;
-    // } else {
-    //   velocity.z -= direction.z * 110.0 * delta;
-    // }
-
-    // if ((moveLeft || moveRight) && firstPerson) {
-    //   velocity.x -= direction.x * 1000.0 * delta;
-    // } else {
-    //   velocity.x -= direction.x * 110.0 * delta;
-    // }
     if (moveForward || moveBackward) velocity.z -= direction.z * 1000.0 * delta;
     if (moveLeft || moveRight) velocity.x -= direction.x * 1000.0 * delta;
 
@@ -459,18 +446,6 @@ function animate() {
       velocity.y = 0;
       controls.getObject().position.y = 10;
     }
-  
-    // } else {
-    //   controls2.moveRight(- velocity.x * delta);
-    //   controls2.moveForward(- velocity.z * delta);
-    //   controls2.getObject().position.y += (velocity.y * delta); // new behavior
-  
-    //   if (controls2.getObject().position.y < 10) {
-    //     velocity.y = 0;
-    //     controls2.getObject().position.y = 10;
-    //   }
-    // }
-
   }
 
   prevTime = time;
