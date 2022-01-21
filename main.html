@@ -12,7 +12,12 @@
             overflow: hidden;
             margin: 0px;
         }
-
+        
+        @font-face {
+            font-family: squidFont;
+            src: url(../Resources/font/Game-Of-Squids.ttf);
+        }
+ 
         #menuPanel {
             position: absolute;
             background-color: rgba(255, 255, 255, 0.5);
@@ -21,35 +26,79 @@
             width: 100%;
             height: 100%;
         }
-
-        #level1Button {
-            height: 50px;
-            width: 200px;
-            margin: -25px -100px;
-            position: relative;
-            top: 50%;
-            left: 25%;
-            font-size: 32px;
+          
+        #menu {
+            width:0px;
+            height:0px;
+            
+            border-left: 300px solid transparent;
+            border-right:300px solid transparent;
+            border-top: 300px solid transparent;
+            border-radius: px;
+            position:relative;
+            margin:auto;
+            top:5px;
+            left:2px;
+            
         }
-
-        #level2Button {
-            height: 50px;
-            width: 200px;
-            margin: -25px -100px;
-            position: relative;
-            top: 50%;
-            left: 75%;
-            font-size: 32px;
+          
+        #level1 {
+        
+            position:relative;
+            bottom:330+500px;
+            right:240px;
+            height:50px;
+            width:500px;
+            background:black;
+            text-align:center;
+            font-size:30px;
+            background-size: 1px 300%;
+            color:#e11584;
+            font-family: squidFont;
+            
+            cursor:pointer;
+        }
+        
+        #level2 {
+            height:50px;
+            width:500px;
+            background:black;
+            position:relative;
+            bottom:345px+500;
+            right:240px;
+            text-align:center;
+            font-size:30px;
+            font-family:squidFont;
+            color:#e11584;
+            cursor:pointer;
         }
 
         #acknowledgements {
-            height: 50px;
-            width: 200px;
-            margin: -25px -100px;
-            position: relative;
-            bottom: 50%;
-            left: 50%;
-            font-size: 32px;
+            height:50px;
+            width:500px;
+            position:relative;
+            background:black;
+            bottom:375+500px;
+            font-size:30px;
+            right:240px;
+            text-align:center;
+            font-family:squidFont;
+            color:#e11584;
+            cursor:pointer;
+        }
+
+        #instructions {
+            width: 100%;
+            height: 100%;
+
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+
+            text-align: center;
+            font-size: 14px;
+            cursor: pointer;
         }
 
     </style>
@@ -57,11 +106,26 @@
 
 <body>
     <h1 class="text"></h1>
-   <div id="menuPanel">
-        <button id="level1Button">Level 1</button>
-        <button id="level2Button">Level 2</button>
-        <a href="ack.html">Acknowledgements</a>
-   </div>
+
+   <div id="menu">
+
+    <button id="level1"><p>LEVEL 1</p></button>
+    <button id="level2"><p>LEVEL 2</p></button>
+    <a href="../ack.html"><button id="acknowledgements"><p>ACKNOWLEDGEMENTS</p></button></a>
+    <p>
+        Choose your level.
+        This game is based off the Red Light Green Light mini-game from the hugely popular Netflix series 'Squid Game'.
+        Object of the game is to make it to the end without the doll seeing you.
+        If the doll turns around, you must STOP!
+        If the doll is facing away, then you may go.
+    </p>
+    <p>
+        Move: WASD<br/>
+        Look: MOUSE<br/>
+        Switch Camera: C
+    </p>
+
+  </div>
    <canvas id="gl-canvas" width="1024" height="1024"></canvas>
    <!-- gsap.min.js -->
    <script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.9.1/gsap.min.js"></script>
