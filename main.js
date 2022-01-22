@@ -3,7 +3,7 @@ import { PointerLockControls } from '../Common/three/examples/jsm/controls/Point
 import { GLTFLoader } from '../Common/three/examples/jsm/loaders/GLTFLoader.js';
 import { RoomEnvironment } from '../Common/three/examples/jsm/environments/RoomEnvironment.js';
 
-let camera, scene, levelOne, levelTwo, overlay, renderer, canvas, controls, controls2, raycaster, cube, detect;
+let camera, scene, levelOne, levelTwo, overlay, renderer, canvas, controls, raycaster, cube, detect;
 
 let deathSound, backgroundTheme;
 
@@ -14,7 +14,8 @@ let moveRight = false;
 let moveLeft = false;
 let gameOver = false;
 let gameStarted = false;
-let doll, minionTwo, player
+
+let doll, doll2, player, player2
 
 let prevTime = performance.now();
 const velocity = new THREE.Vector3();
@@ -35,6 +36,7 @@ function main() {
 
   renderer.setClearColor(new THREE.Color(0x000000));
   renderer.shadowMap.enabled = true;
+  renderer.shadowMap.type = THREE.PCFSoftShadowMap; // default THREE.PCFShadowMap
 
   // world
   levelOne = new THREE.Scene();
@@ -42,20 +44,24 @@ function main() {
   overlay.background = new THREE.Color({color: "black"});  
 
   // room env
-  const environment = new RoomEnvironment();
-  const pmremGenerator = new THREE.PMREMGenerator(renderer);
-  levelOne.environment = pmremGenerator.fromScene(environment).texture;
+  // const environment = new RoomEnvironment();
+  // const pmremGenerator = new THREE.PMREMGenerator(renderer);
+  // levelOne.environment = pmremGenerator.fromScene(environment).texture;
 
   // camera
   camera = new THREE.PerspectiveCamera(75, window.innerWidth / window.innerHeight, 1, 4500);
-  //camera.lookAt(50, 50, 0);
+  camera.lookAt(50, 50, 0);
 
   // player
   player = new THREE.Object3D();
+  player2 = new THREE.Object3D();
+
   const loader = new GLTFLoader();
   loader.load('../GLTF_Models/player/scene.gltf', function (gltf){
 
     player.add(gltf.scene);
+    player2.add(gltf.scene.clone());
+
   }, undefined, function (error) {
     console.error(error);
   });
@@ -68,9 +74,9 @@ function main() {
 
   controls = new PointerLockControls(player, document.body);
 
-  renderer.toneMapping = THREE.ACESFilmicToneMapping;
-  renderer.toneMappingExposure = 1.2;
-  renderer.outputEncoding = THREE.sRGBEncoding;
+  // renderer.toneMapping = THREE.ACESFilmicToneMapping;
+  // renderer.toneMappingExposure = 1.2;
+  // renderer.outputEncoding = THREE.sRGBEncoding;
 
   // music
   backgroundTheme = new Audio('./Sounds/theme.mp3');
@@ -85,7 +91,7 @@ function main() {
   level1Button.addEventListener('click', function(){
     scene = levelOne;
     controls.lock();
-    text.innerText = "Welcome to Squid Game!"
+    text.innerText = "Welcome to Squid Game!";
     backgroundTheme.play();
     loading();
   });
@@ -93,7 +99,7 @@ function main() {
   level2Button.addEventListener('click', function(){
     scene = levelTwo;
     controls.lock();
-    text.innerText = "Welcome to Squid Game!"
+    text.innerText = "Welcome to Squid Game!";
     backgroundTheme.play();
     loading();
   });
@@ -111,14 +117,20 @@ function main() {
   const post2 = new THREE.Object3D();
   // doll
   loader.load('../GLTF_Models/doll/scene.gltf', function (gltf){
-    
+
     gltf.scene.position.set(750, 0, 0);
     gltf.scene.scale.set(60, 60, 60);
     gltf.scene.rotation.set(0, -Math.PI*(1/2), 0);
 
     doll = gltf.scene;
-
     levelOne.add(doll);
+    
+    gltf.scene.traverse(function(node) {
+      if (node.isMesh) {
+        node.castShadow = true;
+      }
+    });
+
   }, undefined, function (error) {
     console.error(error);
   });
@@ -146,19 +158,38 @@ function main() {
   levelOne.background = new THREE.Color(0x89cff0);
   
   // lights
-  const dirLight = new THREE.DirectionalLight(0xffffff, 1.1);
-  dirLight.position.set(0, 10, -5);
-  levelOne.add(dirLight);
+  // const dirLight = new THREE.DirectionalLight(0xffffff, 1.1);
+  // dirLight.position.set(0, 10, -5);
+  // levelOne.add(dirLight);
 
   const ambientLight = new THREE.AmbientLight(0xffffff, 1.0);
   levelOne.add(ambientLight);
 
-  const spotLight = new THREE.SpotLight(0xffffff, 0.5, {distance: 1});
-
+  const spotLight = new THREE.SpotLight(0xffffff, 0.5);
+  spotLight.castShadow = true;
+  spotLight.target.castShadow = true;
   spotLight.position.set(-50, 200, -63);
-  //spotLight.target.position.set(750, 0, 0);
+  
+  //Set up shadow properties for the light
+  spotLight.shadow.mapSize.width = 512; // default
+  spotLight.shadow.mapSize.height = 512; // default
+  spotLight.shadow.camera.near = 0.1; // default
+  spotLight.shadow.camera.far = 1100; // default
+  spotLight.shadow.focus = 1; // default
+
+  spotLight.target.position.set(750, 0, 0);
   levelOne.add(spotLight);
-  //levelOne.add(spotLight.target);
+  levelOne.add(spotLight.target);
+
+  const geometry = new THREE.BoxGeometry( 1, 1, 1 );
+  const material = new THREE.MeshBasicMaterial( {color: 0x00ff00} );
+  const cube = new THREE.Mesh( geometry, material );
+  levelOne.add( cube );
+  cube.scale.set(20, 20, 20);
+  cube.position.set(300, 0, 0);
+  cube.castShadow = true;
+
+  levelOne.add(new THREE.CameraHelper(spotLight.shadow.camera));
 
   // texture
   const floorTexture = new THREE.TextureLoader().load('../Resources/floor/beach.jpg');
@@ -172,6 +203,7 @@ function main() {
   const floorMaterial = new THREE.MeshPhongMaterial({map: floorTexture});
   const floor = new THREE.Mesh(floorGeometry, floorMaterial);
   floor.rotateX(-Math.PI/2);
+  floor.receiveShadow = true;
   levelOne.add(floor);
 
   // finishLine
@@ -202,64 +234,86 @@ function main() {
 
   const frontWall = new THREE.Mesh(wallGeometry, wallMaterial);
   frontWall.position.set(1000, 0, 0);
+  frontWall.receiveShadow = true;
   levelOne.add(frontWall);
 
   levelOne.add(controls.getObject());
 
-  /////////////////////////////////////////////////
-  //       Level 2                               //
-  /////////////////////////////////////////////////
+  ///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+  //                                                              Level 2                                                                          //
+  ///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
   levelTwo = new THREE.Scene();
 
   // camera
   camera = new THREE.PerspectiveCamera(75, window.innerWidth / window.innerHeight, 1, 4500);
   camera.lookAt(50, 50, 0);
 
-  controls = new PointerLockControls(camera, document.body);
-
+  // sky
   levelTwo.background = new THREE.Color(0x89cff0);
 
-  const floorMaterialRed = new THREE.MeshBasicMaterial({color: "red"});
-  const floorTwo = new THREE.Mesh(floorGeometry, floorMaterialRed);
-  floorTwo.rotateX(-Math.PI/2);
-  levelTwo.add(floorTwo);
+  // player
+  player2.scale.set(30, 30, 30);
+  player2.position.set(0, -20, 0);
+  player2.rotation.set(0, Math.PI*(1/2), 0);
 
+  levelTwo.add(player2);
+  camera.add(player2);
+  player2.visible = false;
+
+  controls = new PointerLockControls(camera, document.body);
+
+  // lights
   const dirLightTwo = new THREE.DirectionalLight(0xffffff, 1.1);
   dirLightTwo.position.set(0, 10, -5);
   levelTwo.add(dirLightTwo);
 
-  const ambientLightTwo = new THREE.AmbientLight(0xF22222, 2.0);
+  const ambientLightTwo = new THREE.AmbientLight(0xffffff, 1.0);
   levelTwo.add(ambientLightTwo);
 
+  const spotLightTwo = new THREE.SpotLight(0xffffff, 0.5, {distance: 1});
+  spotLightTwo.position.set(-50, 2000, -63);
+  levelTwo.add(spotLightTwo);
+
+  // floor
+  const floorTwo = new THREE.Mesh(floorGeometry, floorMaterial);
+  floorTwo.rotateX(-Math.PI/2);
+  levelTwo.add(floorTwo);
+
+  // finish line
   const finishLineTwo = new THREE.Mesh(finishLineGeo, finishLineMat);
   finishLineTwo.rotateX(-Math.PI/2);
   finishLineTwo.position.set(740, 1, 0);
   levelTwo.add(finishLineTwo);
 
+  // walls
   const leftWallTwo = new THREE.Mesh(wallGeometry, wallMaterial);
   leftWallTwo.rotateY(-Math.PI/2);
-  leftWallTwo.position.set(100, 0, 100);
+  leftWallTwo.position.set(100, 0, 1000);
   levelTwo.add(leftWallTwo);
 
   const rightWallTwo = new THREE.Mesh(wallGeometry, wallMaterial);
   rightWallTwo.rotateY(-Math.PI/2);
-  rightWallTwo.position.set(100, 0, -100);
+  rightWallTwo.position.set(100, 0, -1000);
   levelTwo.add(rightWallTwo);
 
   const backWallTwo = new THREE.Mesh(wallGeometry, wallMaterial);
   backWallTwo.position.set(-100, 0, 0);
   levelTwo.add(backWallTwo);
 
+  const frontWallTwo = new THREE.Mesh(wallGeometry, wallMaterial);
+  frontWallTwo.position.set(1000, 0, 0);
+  levelTwo.add(frontWallTwo);
+
   const loaderTwo = new GLTFLoader();
   loaderTwo.load('../GLTF_Models/doll/scene.gltf', function (gltf){
     
-    gltf.scene.position.set(750, 22, 0);
-    gltf.scene.scale.set(20, 20, 20);
+    gltf.scene.position.set(750, 0, 0);
+    gltf.scene.scale.set(60, 60, 60);
     gltf.scene.rotation.set(0, -Math.PI*(1/2), 0);
 
-    minionTwo = gltf.scene;
+    doll2 = gltf.scene;
 
-    levelTwo.add(minionTwo);
+    levelTwo.add(doll2);
   }, undefined, function (error) {
     console.error(error);
   });
@@ -272,10 +326,12 @@ function main() {
         if (firstPerson) {
           firstPerson = false;
           player.visible = true;
+          player2.visible = true;
           camera.position.set(camera.position.x - 20, camera.position.y + 20, camera.position.z);
         } else {
           firstPerson = true;
           player.visible = false;
+          player2.visible = false;
           camera.position.set(camera.position.x + 20, camera.position.y - 20, camera.position.z);
         }
         break;
@@ -335,11 +391,11 @@ function randomNumber(min, max) {
 
 async function loading() {
   await delay(5000);
-  text.innerText = "Starting in 3";
+  text.innerText = "Starting in 3...";
   await delay(1000);
-  text.innerText = "Starting in 2";
+  text.innerText = "Starting in 2...";
   await delay(1000);
-  text.innerText = "Starting in 1";
+  text.innerText = "Starting in 1...";
   await delay(1000);
   gameStarted = true;
   text.innerText = "Begin!! Get to the end without the doll catching you!";
@@ -359,14 +415,12 @@ async function startGame() {
 
 function redLight() {
   gsap.to(doll.rotation, {duration: .45, y: -Math.PI*(1/2)});
-  gsap.to(minionTwo.rotation, {duration: .45, y: -Math.PI*(1/2)});
-  //cube.material.color.set("red");
+  gsap.to(doll2.rotation, {duration: .45, y: -Math.PI*(1/2)});
 }
 
 function greenLight() {
   gsap.to(doll.rotation, {duration: .45, y: Math.PI*(1/2)});
-  gsap.to(minionTwo.rotation, {duration: .45, y: -Math.PI*(1/2)});
-  //cube.material.color.set("green");
+  gsap.to(doll2.rotation, {duration: .45, y: Math.PI*(1/2)});
 }
 
 function checker() {
@@ -377,8 +431,7 @@ function checker() {
       //camera.position.set(0, 10, 0);
     }
   }
-  //console.log(camera.position.x + ',' + camera.position.y + ',' + camera.position.z);
-
+  
   if (gameOver) {
     camera.position.set(0, 10, 0);
     text.innerText = "You're dead! Restart."
@@ -400,9 +453,7 @@ function checker() {
 
 function thirdPersonCam() {
   player.position.set(camera.position.x + 50, 0, camera.position.z);
-
-  // var direction = player.position.clone().sub(camera.position).normalize();
-  // player.position.add(direction.clone().multiplyScalar(10));
+  player2.position.set(camera.position.x + 50, 0, camera.position.z);
 
   console.log('CAMERA ' + camera.position.x + ',' + camera.position.y + ',' + camera.position.z);
   console.log('PLAYER ' + player.position.x + ',' + player.position.y + ',' + player.position.z);
@@ -410,6 +461,7 @@ function thirdPersonCam() {
 
 function firstPersonCam() {
   player.position.set(camera.position.x, camera.position.y, camera.position.z);
+  player2.position.set(camera.position.x, camera.position.y, camera.position.z);
 }
  
 function animate() {

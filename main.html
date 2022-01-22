@@ -13,47 +13,55 @@
         body {
             overflow: hidden;
             margin: 0px;
-            background-image: url("../Resources/logo/wallpaper.jpg");
+            
+        }
+
+        .text{
+            position: fixed;
+            text-align: center;
+            top: 20px;
+            font-weight: bold;
+            left: 50%;
+            transform: translateX(-50%);
+            font-size: 50px;
+            text-shadow: 0 2px 10px rgba(0,0,0,0.3);
         }
         
         @font-face {
             font-family: squidFont;
             src: url(../Resources/font/Game-Of-Squids.ttf);
         }
- 
-        #menuPanel {
-            position: absolute;
-            background-color: rgba(255, 255, 255, 0.5);
-            top: 0px;
-            left: 0px;
-            width: 100%;
-            height: 100%;
+
+        p.a {
+            font-family: squidFont;
+            font-size: 16px;
+        }
+
+        p.b {
+            font-family: squidFont;
+            font-size: 20px;
         }
           
         #menu {
-            width:1000px;
-            height:10000px;
-            
-            border-left: 300px solid transparent;
-            border-right:300px solid transparent;
-            border-radius: px;
-            position:relative;
-            margin:auto;
-            top:5px;
-            left:2px;
+            position: absolute;
+            width:100%;
+            height:100%;
+            background-color: #f40091; 
+            top:0px;
+            left:0px;
             
         }
           
         #level1 {
         
-            position:relative;
-            bottom:330+500px;
-            height:50px;
-            width:500px;
+            position:absolute;
+            left:36%;
+            top:60%;
+            height:65px;
+            width:515px;
             background:black;
             text-align:center;
             font-size:30px;
-            background-size: 1px 300%;
             color:#e11584;
             font-family: squidFont;
             
@@ -61,42 +69,45 @@
         }
         
         #level2 {
-            height:50px;
-            width:500px;
+            position:fixed;
+            left:36%;
+            top:70%;
+            height:65px;
+            width:515px;
             background:black;
-            position:relative;
-            bottom:345px+5000;
             text-align:center;
             font-size:30px;
             font-family:squidFont;
             color:#e11584;
+
             cursor:pointer;
         }
 
         #acknowledgements {
-            height:50px;
-            width:500px;
-            position:relative;
+            position:fixed;
+            left:36%;
+            top:80%;
+            height:65px;
+            width:515px;
             background:black;
-            bottom:375+500px;
-            font-size:30px;
             text-align:center;
+            font-size:30px;
             font-family:squidFont;
             color:#e11584;
+
             cursor:pointer;
         }
 
         #instructions {
+            position:absolute;
+            top: 65%;
             width: 100%;
             height: 100%;
-
             display: flex;
             flex-direction: column;
             justify-content: center;
             align-items: center;
-
             text-align: center;
-            font-size: 14px;
             cursor: pointer;
         }
 
@@ -107,21 +118,21 @@
     <h1 class="text"></h1>
 
    <div id="menu">
-
+    <img src="../Resources/logo/logo.png" width="300" height="250">
     <button id="level1"><p>LEVEL 1</p></button>
     <button id="level2"><p>LEVEL 2</p></button>
     <a href="../ack.html"><button id="acknowledgements"><p>ACKNOWLEDGEMENTS</p></button></a>
-    <p>
-        Choose your level.
-        This game is based off the Red Light Green Light mini-game from the hugely popular Netflix series 'Squid Game'.
-        Object of the game is to make it to the end without the doll catching you moving.
-        If the doll turns around, you must STOP!
+    <p class="a">
+        Choose your level.<br/>
+        This game is based off the Red Light Green Light mini-game from the hugely popular Netflix series 'Squid Game'.<br/>
+        The object of the game is to make it to the end without the doll catching you moving.<br/>
+        If the doll turns around, you must STOP!<br/>
         If the doll is facing away, then you may go.
     </p>
-    <p>
-        <br/>Move: WASD<br/>
+    <p class="b">
+        <br/>MovE: WAsD<br/>
         Look: MOUSE<br/>
-        Switch Camera: C
+        Switch CamEra: C
     </p>
 
   </div>
