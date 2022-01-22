@@ -3,7 +3,7 @@ import { PointerLockControls } from '../Common/three/examples/jsm/controls/Point
 import { GLTFLoader } from '../Common/three/examples/jsm/loaders/GLTFLoader.js';
 import { RoomEnvironment } from '../Common/three/examples/jsm/environments/RoomEnvironment.js';
 
-let camera, scene, levelOne, levelTwo, overlay, renderer, canvas, controls, raycaster, cube, detect;
+let camera, scene, levelOne, levelTwo, overlay, renderer, canvas, controls, raycaster, detect;
 
 let deathSound, backgroundTheme;
 
@@ -60,7 +60,6 @@ function main() {
   loader.load('../GLTF_Models/player/scene.gltf', function (gltf){
 
     player.add(gltf.scene);
-    player2.add(gltf.scene.clone());
 
   }, undefined, function (error) {
     console.error(error);
@@ -137,6 +136,11 @@ function main() {
   // lampost
   loader.load('../GLTF_Models/lampost/lampost.glb', function (gltf){
 
+    gltf.scene.traverse(function(node2) {
+      if (node2.isMesh) {
+        node2.castShadow = true;
+      }
+    });
     post.add(gltf.scene);
     post2.add(gltf.scene.clone());
 
@@ -168,7 +172,7 @@ function main() {
   const spotLight = new THREE.SpotLight(0xffffff, 0.5);
   spotLight.castShadow = true;
   spotLight.target.castShadow = true;
-  spotLight.position.set(-50, 200, -63);
+  spotLight.position.set(-50, 130, -63);
   
   //Set up shadow properties for the light
   spotLight.shadow.mapSize.width = 512; // default
@@ -178,8 +182,20 @@ function main() {
   spotLight.shadow.focus = 1; // default
 
   spotLight.target.position.set(750, 0, 0);
-  levelOne.add(spotLight);
-  levelOne.add(spotLight.target);
+  // levelOne.add(spotLight);
+  // levelOne.add(spotLight.target);
+
+  const light = new THREE.PointLight(0xff0000, 1, 200);
+  light.position.set(-50, 130, -63);
+  light.castShadow = true;
+
+  //Set up shadow properties for the light
+  light.shadow.mapSize.width = 512; // default
+  light.shadow.mapSize.height = 512; // default
+  light.shadow.camera.near = 0.5; // default
+  light.shadow.camera.far = 500; // default
+
+  levelOne.add(light);
 
   const geometry = new THREE.BoxGeometry( 1, 1, 1 );
   const material = new THREE.MeshBasicMaterial( {color: 0x00ff00} );
@@ -305,6 +321,21 @@ function main() {
   levelTwo.add(frontWallTwo);
 
   const loaderTwo = new GLTFLoader();
+  // player (LEVEL 2)
+  loaderTwo.load('../GLTF_Models/player/scene.gltf', function (gltf){
+
+    player2.add(gltf.scene);
+
+  }, undefined, function (error) {
+    console.error(error);
+  });
+  player2.scale.set(30, 30, 30);
+  player2.position.set(0, -20, 0);
+  player2.rotation.set(0, Math.PI*(1/2), 0)
+  levelTwo.add(player2);
+  //camera.add(player2);
+  player2.visible = false;
+  // doll (LEVEL 2)
   loaderTwo.load('../GLTF_Models/doll/scene.gltf', function (gltf){
     
     gltf.scene.position.set(750, 0, 0);
