@@ -21,6 +21,8 @@ let moveLeft = false;
 let gameOver = false;
 let gameStarted = false;
 
+let stats;
+
 // time elapsed since the start
 let prevTime = performance.now();
 
@@ -44,6 +46,17 @@ const text = document.querySelector('.text');
 const delay = ms => new Promise(res => setTimeout(res, ms));
 
 
+function createStats() {
+  var stats = new Stats();
+  stats.setMode(0);
+
+  stats.domElement.style.position = 'absolute';
+  stats.domElement.style.left = '0';
+  stats.domElement.style.top = '0';
+
+  return stats;
+}
+
 function main() {
   // obtains the canvas element from the HTML file which specifies the requested size of our canvas
   canvas = document.getElementById( "gl-canvas" );
@@ -59,6 +72,10 @@ function main() {
   renderer.shadowMap.type = THREE.PCFSoftShadowMap;
   // appends canvas as a child of the body in the page
   document.body.appendChild(renderer.domElement);
+
+  // STATS  GET RID
+  stats = createStats();
+  document.body.appendChild(stats.domElement);
 
   /* world */
   // creates new Three.js scenes, one for the actual level and for the overlay before level starts
@@ -315,6 +332,10 @@ function main() {
 
   /* sky */
   levelTwo.background = new THREE.Color(0x89cff0);
+
+  // player
+  camera.add(playerTwo);
+
   controls = new PointerLockControls(camera, document.body);
 
   /* lights */
@@ -397,7 +418,6 @@ function main() {
   playerTwo.position.set(0, -20, 0);
   playerTwo.rotation.set(0, Math.PI*(1/2), 0)
   levelTwo.add(playerTwo);
-  camera.add(playerTwo);
   playerTwo.visible = false;
 
   /* doll */
@@ -545,13 +565,13 @@ function randomNumber(min, max) {
  * Sets gameStarted to true and calls the startGame() function.
  */
 async function loading() {
-  await delay(5000);
+  //await delay(5000);
   text.innerText = "Starting in 3...";
-  await delay(1000);
+  //await delay(1000);
   text.innerText = "Starting in 2...";
-  await delay(1000);
+  //await delay(1000);
   text.innerText = "Starting in 1...";
-  await delay(1000);
+  //await delay(1000);
   gameStarted = true;
   text.innerText = "Begin!! Get to the end without the doll catching you!";
   startGame();
@@ -612,7 +632,6 @@ function checker() {
     camera.position.set(0, 10, 0);
     text.innerText = "You're dead! Restart."
   }
-  console.log('CAMERA ' + camera.position.x + ',' + camera.position.y + ',' + camera.position.z);
 
   if (detect && !gameOver) {
     if (moveForward || moveLeft || moveRight || moveBackward) {
@@ -634,9 +653,6 @@ function checker() {
 function thirdPersonCam() {
   player.position.set(camera.position.x + 50, 0, camera.position.z);
   playerTwo.position.set(camera.position.x + 50, 0, camera.position.z);
-
-  console.log('CAMERA ' + camera.position.x + ',' + camera.position.y + ',' + camera.position.z);
-  console.log('PLAYER ' + player.position.x + ',' + player.position.y + ',' + player.position.z);
 }
 
 /**
@@ -704,9 +720,10 @@ function animate() {
   if (gameStarted) {
     //renderer.autoClear = false;
     renderer.render(scene, camera);
+    stats.update();
 
   }
-
+  
 }
 
 main();
