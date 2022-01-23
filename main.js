@@ -15,7 +15,7 @@ let moveLeft = false;
 let gameOver = false;
 let gameStarted = false;
 
-let doll, doll2, player, player2
+let doll, doll2, player, playerTwo
 
 let prevTime = performance.now();
 const velocity = new THREE.Vector3();
@@ -54,10 +54,16 @@ function main() {
 
   // player
   player = new THREE.Object3D();
-  player2 = new THREE.Object3D();
+  playerTwo = new THREE.Object3D();
 
   const loader = new GLTFLoader();
   loader.load('../GLTF_Models/player/scene.gltf', function (gltf){
+
+    gltf.scene.traverse(function(node) {
+      if (node.isMesh) {
+        node.castShadow = true;
+      }
+    });
 
     player.add(gltf.scene);
 
@@ -77,7 +83,7 @@ function main() {
   // renderer.toneMappingExposure = 1.2;
   // renderer.outputEncoding = THREE.sRGBEncoding;
 
-  // music
+  // sounds
   backgroundTheme = new Audio('./Sounds/theme.mp3');
   deathSound = new Audio('./Sounds/death.mp3');
   backgroundTheme.loop = true;
@@ -112,8 +118,8 @@ function main() {
   });
 
   // models
-  const post = new THREE.Object3D();
-  const post2 = new THREE.Object3D();
+  const leftPost = new THREE.Object3D();
+  const rightPost = new THREE.Object3D();
   // doll
   loader.load('../GLTF_Models/doll/scene.gltf', function (gltf){
 
@@ -141,71 +147,52 @@ function main() {
         node2.castShadow = true;
       }
     });
-    post.add(gltf.scene);
-    post2.add(gltf.scene.clone());
+    leftPost.add(gltf.scene);
+    rightPost.add(gltf.scene.clone());
 
   }, undefined, function (error) {
     console.error(error);
   });
   // clone lamposts
-  post.position.set(-85, 0, -90);
-  post.scale.set(6, 6, 6);
-  post.rotation.set(0, -2.2, 0);
-  levelOne.add(post);
+  leftPost.position.set(-56, 0, -947);
+  leftPost.scale.set(30, 30, 30);
+  leftPost.rotation.set(0, -2.2, 0);
+  levelOne.add(leftPost);
 
-  post2.position.set(-50, 0, 0);
-  post2.scale.set(6, 6, 6);
-  post2.rotation.set(0, -2.2, 0);
-  levelOne.add(post2);
+  rightPost.position.set(-56, 0, 947);
+  rightPost.scale.set(30, 30, 30);
+  rightPost.rotation.set(0, -Math.PI/4, 0);
+  levelOne.add(rightPost);
 
   // sky
   levelOne.background = new THREE.Color(0x89cff0);
   
   // lights
-  // const dirLight = new THREE.DirectionalLight(0xffffff, 1.1);
-  // dirLight.position.set(0, 10, -5);
-  // levelOne.add(dirLight);
-
-  const ambientLight = new THREE.AmbientLight(0xffffff, 1.0);
+  const ambientLight = new THREE.AmbientLight(0xffffff, 0.5);
   levelOne.add(ambientLight);
 
-  const spotLight = new THREE.SpotLight(0xffffff, 0.5);
-  spotLight.castShadow = true;
-  spotLight.target.castShadow = true;
-  spotLight.position.set(-50, 130, -63);
-  
-  //Set up shadow properties for the light
-  spotLight.shadow.mapSize.width = 512; // default
-  spotLight.shadow.mapSize.height = 512; // default
-  spotLight.shadow.camera.near = 0.1; // default
-  spotLight.shadow.camera.far = 1100; // default
-  spotLight.shadow.focus = 1; // default
+  const leftLight = new THREE.PointLight(0xffff00, 0.7);
+  const rightLight = new THREE.PointLight(0xffff00, 0.7);
 
-  spotLight.target.position.set(750, 0, 0);
-  // levelOne.add(spotLight);
-  // levelOne.add(spotLight.target);
-
-  const light = new THREE.PointLight(0xff0000, 1, 200);
-  light.position.set(-50, 130, -63);
-  light.castShadow = true;
+  leftLight.position.set(128, 725, -812);
+  rightLight.position.set(129, 710, 770);
+  leftLight.castShadow = true;
+  rightLight.castShadow = true;
 
   //Set up shadow properties for the light
-  light.shadow.mapSize.width = 512; // default
-  light.shadow.mapSize.height = 512; // default
-  light.shadow.camera.near = 0.5; // default
-  light.shadow.camera.far = 500; // default
+  leftLight.shadow.mapSize.width = 2048; 
+  leftLight.shadow.mapSize.height = 2048; 
+  leftLight.shadow.camera.near = 0.1; 
+  leftLight.shadow.camera.far = 4000; 
+  rightLight.shadow.mapSize.width = 2048; 
+  rightLight.shadow.mapSize.height = 2048; 
+  rightLight.shadow.camera.near = 0.1; 
+  rightLight.shadow.camera.far = 4000;
 
-  levelOne.add(light);
+  levelOne.add(leftLight);
+  levelOne.add(rightLight);
 
-  const geometry = new THREE.BoxGeometry( 1, 1, 1 );
-  const material = new THREE.MeshBasicMaterial( {color: 0x00ff00} );
-  const cube = new THREE.Mesh( geometry, material );
-  levelOne.add( cube );
-  cube.scale.set(20, 20, 20);
-  cube.position.set(300, 0, 0);
-  cube.castShadow = true;
-
-  levelOne.add(new THREE.CameraHelper(spotLight.shadow.camera));
+  levelOne.add(new THREE.CameraHelper(rightLight.shadow.camera));
 
   // texture
   const floorTexture = new THREE.TextureLoader().load('../Resources/floor/beach.jpg');
@@ -213,6 +200,10 @@ function main() {
   wallTexture.wrapS = THREE.RepeatWrapping;
   wallTexture.wrapT = THREE.RepeatWrapping;
   wallTexture.repeat.set(3, 2);
+
+  floorTexture.wrapS = THREE.RepeatWrapping;
+  floorTexture.wrapT = THREE.RepeatWrapping;
+  floorTexture.repeat.set(3, 2);
 
   // floor
   const floorGeometry = new THREE.PlaneGeometry(3000, 2000, 100, 100);
@@ -237,15 +228,18 @@ function main() {
   const leftWall = new THREE.Mesh(wallGeometry, wallMaterial);
   leftWall.rotateY(-Math.PI/2);
   leftWall.position.set(100, 0, 1000);
+  leftWall.receiveShadow = true;
   levelOne.add(leftWall);
 
   const rightWall = new THREE.Mesh(wallGeometry, wallMaterial);
   rightWall.rotateY(-Math.PI/2);
   rightWall.position.set(100, 0, -1000);
+  rightWall.receiveShadow = true;
   levelOne.add(rightWall);
 
   const backWall = new THREE.Mesh(wallGeometry, wallMaterial);
   backWall.position.set(-100, 0, 0);
+  backWall.receiveShadow = true;
   levelOne.add(backWall);
 
   const frontWall = new THREE.Mesh(wallGeometry, wallMaterial);
@@ -268,31 +262,45 @@ function main() {
   levelTwo.background = new THREE.Color(0x89cff0);
 
   // player
-  player2.scale.set(30, 30, 30);
-  player2.position.set(0, -20, 0);
-  player2.rotation.set(0, Math.PI*(1/2), 0);
+  playerTwo.scale.set(30, 30, 30);
+  playerTwo.position.set(0, -20, 0);
+  playerTwo.rotation.set(0, Math.PI*(1/2), 0);
 
-  levelTwo.add(player2);
-  camera.add(player2);
-  player2.visible = false;
+  levelTwo.add(playerTwo);
+  camera.add(playerTwo);
+  playerTwo.visible = false;
 
   controls = new PointerLockControls(camera, document.body);
 
   // lights
-  const dirLightTwo = new THREE.DirectionalLight(0xffffff, 1.1);
-  dirLightTwo.position.set(0, 10, -5);
-  levelTwo.add(dirLightTwo);
-
-  const ambientLightTwo = new THREE.AmbientLight(0xffffff, 1.0);
+  const ambientLightTwo = new THREE.AmbientLight(0xffffff, 0.5);
   levelTwo.add(ambientLightTwo);
 
-  const spotLightTwo = new THREE.SpotLight(0xffffff, 0.5, {distance: 1});
-  spotLightTwo.position.set(-50, 2000, -63);
-  levelTwo.add(spotLightTwo);
+  const leftLightTwo = new THREE.PointLight(0xECC1B2, 0.7);
+  const rightLightTwo = new THREE.PointLight(0xECC1B2, 0.7);
+
+  leftLightTwo.position.set(128, 725, -812);
+  rightLightTwo.position.set(129, 710, 770);
+  leftLightTwo.castShadow = true;
+  rightLightTwo.castShadow = true;
+
+  //Set up shadow properties for the light
+  leftLightTwo.shadow.mapSize.width = 2048; 
+  leftLightTwo.shadow.mapSize.height = 2048; 
+  leftLightTwo.shadow.camera.near = 0.1; 
+  leftLightTwo.shadow.camera.far = 4000; 
+  rightLightTwo.shadow.mapSize.width = 2048; 
+  rightLightTwo.shadow.mapSize.height = 2048; 
+  rightLightTwo.shadow.camera.near = 0.1; 
+  rightLightTwo.shadow.camera.far = 4000;
+
+  levelTwo.add(leftLightTwo);
+  levelTwo.add(rightLightTwo);
 
   // floor
   const floorTwo = new THREE.Mesh(floorGeometry, floorMaterial);
   floorTwo.rotateX(-Math.PI/2);
+  floorTwo.receiveShadow = true;
   levelTwo.add(floorTwo);
 
   // finish line
@@ -305,36 +313,40 @@ function main() {
   const leftWallTwo = new THREE.Mesh(wallGeometry, wallMaterial);
   leftWallTwo.rotateY(-Math.PI/2);
   leftWallTwo.position.set(100, 0, 1000);
+  leftWallTwo.receiveShadow = true;
   levelTwo.add(leftWallTwo);
 
   const rightWallTwo = new THREE.Mesh(wallGeometry, wallMaterial);
   rightWallTwo.rotateY(-Math.PI/2);
   rightWallTwo.position.set(100, 0, -1000);
+  rightWallTwo.receiveShadow = true;
   levelTwo.add(rightWallTwo);
 
   const backWallTwo = new THREE.Mesh(wallGeometry, wallMaterial);
   backWallTwo.position.set(-100, 0, 0);
+  backWallTwo.receiveShadow = true;
   levelTwo.add(backWallTwo);
 
   const frontWallTwo = new THREE.Mesh(wallGeometry, wallMaterial);
   frontWallTwo.position.set(1000, 0, 0);
+  frontWallTwo.receiveShadow = true;
   levelTwo.add(frontWallTwo);
 
   const loaderTwo = new GLTFLoader();
   // player (LEVEL 2)
   loaderTwo.load('../GLTF_Models/player/scene.gltf', function (gltf){
 
-    player2.add(gltf.scene);
+    playerTwo.add(gltf.scene);
 
   }, undefined, function (error) {
     console.error(error);
   });
-  player2.scale.set(30, 30, 30);
-  player2.position.set(0, -20, 0);
-  player2.rotation.set(0, Math.PI*(1/2), 0)
-  levelTwo.add(player2);
-  //camera.add(player2);
-  player2.visible = false;
+  playerTwo.scale.set(30, 30, 30);
+  playerTwo.position.set(0, -20, 0);
+  playerTwo.rotation.set(0, Math.PI*(1/2), 0)
+  levelTwo.add(playerTwo);
+  //camera.add(playerTwo);
+  playerTwo.visible = false;
   // doll (LEVEL 2)
   loaderTwo.load('../GLTF_Models/doll/scene.gltf', function (gltf){
     
@@ -344,10 +356,43 @@ function main() {
 
     doll2 = gltf.scene;
 
+    gltf.scene.traverse(function(node) {
+      if (node.isMesh) {
+        node.castShadow = true;
+      }
+    });
+
     levelTwo.add(doll2);
   }, undefined, function (error) {
     console.error(error);
   });
+  // lampost
+  const leftPostTwo = new THREE.Object3D();
+  const rightPostTwo = new THREE.Object3D();
+  loader.load('../GLTF_Models/lampost/lampost.glb', function (gltf){
+
+    gltf.scene.traverse(function(node) {
+      if (node.isMesh) {
+        node.castShadow = true;
+      }
+    });
+    leftPostTwo.add(gltf.scene);
+    rightPostTwo.add(gltf.scene.clone());
+
+  }, undefined, function (error) {
+    console.error(error);
+  });
+  // clone lamposts
+  leftPostTwo.position.set(-56, 0, -947);
+  leftPostTwo.scale.set(30, 30, 30);
+  leftPostTwo.rotation.set(0, -2.2, 0);
+  levelTwo.add(leftPostTwo);
+
+  rightPostTwo.position.set(-56, 0, 947);
+  rightPostTwo.scale.set(30, 30, 30);
+  rightPostTwo.rotation.set(0, -Math.PI/4, 0);
+  levelTwo.add(rightPostTwo);
+
   // levelTwo.add(controls.getObject());
 
   // Attach listeners to functions
@@ -357,12 +402,12 @@ function main() {
         if (firstPerson) {
           firstPerson = false;
           player.visible = true;
-          player2.visible = true;
+          playerTwo.visible = true;
           camera.position.set(camera.position.x - 20, camera.position.y + 20, camera.position.z);
         } else {
           firstPerson = true;
           player.visible = false;
-          player2.visible = false;
+          playerTwo.visible = false;
           camera.position.set(camera.position.x + 20, camera.position.y - 20, camera.position.z);
         }
         break;
@@ -421,13 +466,13 @@ function randomNumber(min, max) {
 }
 
 async function loading() {
-  await delay(5000);
+  //await delay(5000);
   text.innerText = "Starting in 3...";
-  await delay(1000);
+  //await delay(1000);
   text.innerText = "Starting in 2...";
-  await delay(1000);
+  //await delay(1000);
   text.innerText = "Starting in 1...";
-  await delay(1000);
+  //await delay(1000);
   gameStarted = true;
   text.innerText = "Begin!! Get to the end without the doll catching you!";
   startGame();
@@ -458,15 +503,18 @@ function checker() {
   if (camera.position.x > 743) {
     if (!gameOver) {
       text.innerText = "You Win!";
+      scene.clear();
+      scene = levelTwo;
       // Go to next level
-      //camera.position.set(0, 10, 0);
+      camera.position.set(0, 10, 0);
     }
   }
-  
+
   if (gameOver) {
     camera.position.set(0, 10, 0);
     text.innerText = "You're dead! Restart."
   }
+  console.log('CAMERA ' + camera.position.x + ',' + camera.position.y + ',' + camera.position.z);
 
   if (detect && !gameOver) {
     if (moveForward || moveLeft || moveRight || moveBackward) {
@@ -484,7 +532,7 @@ function checker() {
 
 function thirdPersonCam() {
   player.position.set(camera.position.x + 50, 0, camera.position.z);
-  player2.position.set(camera.position.x + 50, 0, camera.position.z);
+  playerTwo.position.set(camera.position.x + 50, 0, camera.position.z);
 
   console.log('CAMERA ' + camera.position.x + ',' + camera.position.y + ',' + camera.position.z);
   console.log('PLAYER ' + player.position.x + ',' + player.position.y + ',' + player.position.z);
@@ -492,7 +540,7 @@ function thirdPersonCam() {
 
 function firstPersonCam() {
   player.position.set(camera.position.x, camera.position.y, camera.position.z);
-  player2.position.set(camera.position.x, camera.position.y, camera.position.z);
+  playerTwo.position.set(camera.position.x, camera.position.y, camera.position.z);
 }
  
 function animate() {
@@ -518,8 +566,8 @@ function animate() {
     direction.x = Number(moveRight) - Number(moveLeft);
     direction.normalize(); // this ensures consistent movements in all directions
 
-    if (moveForward || moveBackward) velocity.z -= direction.z * 1000.0 * delta;
-    if (moveLeft || moveRight) velocity.x -= direction.x * 1000.0 * delta;
+    if (moveForward || moveBackward) velocity.z -= direction.z * 10000.0 * delta;
+    if (moveLeft || moveRight) velocity.x -= direction.x * 10000.0 * delta;
 
     controls.moveRight(- velocity.x * delta);
     controls.moveForward(- velocity.z * delta);
