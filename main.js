@@ -1,7 +1,6 @@
 import * as THREE from '../Common/three/build/three.module.js';
 import { PointerLockControls } from '../Common/three/examples/jsm/controls/PointerLockControls.js';
 import { GLTFLoader } from '../Common/three/examples/jsm/loaders/GLTFLoader.js';
-import { RoomEnvironment } from '../Common/three/examples/jsm/environments/RoomEnvironment.js';
 
 // world variables
 let camera, scene, levelOne, levelTwo, overlay, renderer, canvas, controls, detect;
@@ -10,7 +9,7 @@ let camera, scene, levelOne, levelTwo, overlay, renderer, canvas, controls, dete
 let doll, doll2, player, playerTwo
 
 // sound variables
-let deathSound, backgroundTheme;
+let deathSound, backgroundTheme, winSound;
 
 // boolean variables
 let firstPerson = true;
@@ -18,10 +17,10 @@ let moveForward = false;
 let moveBackward = false;
 let moveRight = false;
 let moveLeft = false;
-let gameOver = false;
 let gameStarted = false;
 
-let stats;
+// check to see what level the player is in
+let level = 1;
 
 // time elapsed since the start
 let prevTime = performance.now();
@@ -45,18 +44,6 @@ const text = document.querySelector('.text');
  */
 const delay = ms => new Promise(res => setTimeout(res, ms));
 
-
-function createStats() {
-  var stats = new Stats();
-  stats.setMode(0);
-
-  stats.domElement.style.position = 'absolute';
-  stats.domElement.style.left = '0';
-  stats.domElement.style.top = '0';
-
-  return stats;
-}
-
 function main() {
   // obtains the canvas element from the HTML file which specifies the requested size of our canvas
   canvas = document.getElementById( "gl-canvas" );
@@ -73,26 +60,18 @@ function main() {
   // appends canvas as a child of the body in the page
   document.body.appendChild(renderer.domElement);
 
-  // STATS  GET RID
-  stats = createStats();
-  document.body.appendChild(stats.domElement);
-
   /* world */
   // creates new Three.js scenes, one for the actual level and for the overlay before level starts
   levelOne = new THREE.Scene();
   overlay = new THREE.Scene();
-  overlay.background = new THREE.Color({color: "black"});  
+  overlay.background = new THREE.Color(0xf40091);
+
   // sky
   levelOne.background = new THREE.Color(0x89cff0);
 
-  // room env
-  // const environment = new RoomEnvironment();
-  // const pmremGenerator = new THREE.PMREMGenerator(renderer);
-  // levelOne.environment = pmremGenerator.fromScene(environment).texture;
-
   /* camera */
   camera = new THREE.PerspectiveCamera(75, window.innerWidth / window.innerHeight, 1, 4500);
-  camera.lookAt(50, 50, 0);
+  camera.lookAt(50, 0, 0);
 
   /* player */
   // creates a player object for each level
@@ -133,13 +112,10 @@ function main() {
   // creates controls using pointerlockcontrols for the player model
   controls = new PointerLockControls(player, document.body);
 
-  // renderer.toneMapping = THREE.ACESFilmicToneMapping;
-  // renderer.toneMappingExposure = 1.2;
-  // renderer.outputEncoding = THREE.sRGBEncoding;
-
   /* sounds */
   backgroundTheme = new Audio('./Sounds/theme.mp3');
   deathSound = new Audio('./Sounds/death.mp3');
+  winSound = new Audio('./Sounds/win.mp3');
   backgroundTheme.loop = true;
 
   /* menu */
@@ -152,6 +128,7 @@ function main() {
   // starts music and game
   level1Button.addEventListener('click', function(){
     scene = levelOne;
+    level = 1;
     controls.lock();
     text.innerText = "Welcome to Squid Game!";
     backgroundTheme.play();
@@ -159,6 +136,7 @@ function main() {
   });
   level2Button.addEventListener('click', function(){
     scene = levelTwo;
+    level = 2;
     controls.lock();
     text.innerText = "Welcome to Squid Game!";
     backgroundTheme.play();
@@ -232,8 +210,8 @@ function main() {
   levelOne.add(ambientLight);
 
   // creates two yellow point lights for each lamp post
-  const leftLight = new THREE.PointLight(0xffff00, 0.7);
-  const rightLight = new THREE.PointLight(0xffff00, 0.7);
+  const leftLight = new THREE.PointLight(0xfa7b62, 0.7);
+  const rightLight = new THREE.PointLight(0xfa7b62, 0.7);
 
   // sets properties for each point light
   leftLight.position.set(128, 725, -812);
@@ -254,8 +232,6 @@ function main() {
   // adds lights to the scene
   levelOne.add(leftLight);
   levelOne.add(rightLight);
-
-  levelOne.add(new THREE.CameraHelper(rightLight.shadow.camera));
 
   /* texture */
   // loads textures from resources folder
@@ -326,16 +302,11 @@ function main() {
   // creates new scene for level 2
   levelTwo = new THREE.Scene();
 
-  /* camera */
-  camera = new THREE.PerspectiveCamera(75, window.innerWidth / window.innerHeight, 1, 4500);
-  camera.lookAt(50, 50, 0);
-
   /* sky */
   levelTwo.background = new THREE.Color(0x89cff0);
 
   // player
   camera.add(playerTwo);
-
   controls = new PointerLockControls(camera, document.body);
 
   /* lights */
@@ -344,8 +315,8 @@ function main() {
   levelTwo.add(ambientLightTwo);
 
   // creates two point light for each lamp post
-  const leftLightTwo = new THREE.PointLight(0xECC1B2, 0.7);
-  const rightLightTwo = new THREE.PointLight(0xECC1B2, 0.7);
+  const leftLightTwo = new THREE.PointLight(0xecc1b2, 0.7);
+  const rightLightTwo = new THREE.PointLight(0xecc1b2, 0.7);
 
   // sets properties for each point light
   leftLightTwo.position.set(128, 725, -812);
@@ -406,6 +377,13 @@ function main() {
   const loaderTwo = new GLTFLoader();
   /* player */
   loaderTwo.load('../GLTF_Models/player/scene.gltf', function (gltf){
+
+    // sets castShadow = true on each child mesh, so the model can cast a shadow
+    gltf.scene.traverse(function(object) {
+      if (object.isMesh) {
+        object.castShadow = true;
+      }
+    });
 
     // adds model to player object
     playerTwo.add(gltf.scene);
@@ -476,7 +454,7 @@ function main() {
    * WASD will set the corresponding movement to true on pressing the key down.
    * C will set the boolean firstPerson to true or false depending on if the user is in firstPerson or not.
    * If user is in first-person, then will turn false to imply user wants to go into third-person so changes camera and sets models visibility to true.
-   * @param {keyDown} event 
+   * @param {*} event 
    */
   const onKeyDown = function(event) {
     switch (event.code) {
@@ -510,7 +488,7 @@ function main() {
   /**
    * Similar to onKeyDown function except key C is not required.
    * For each WASD, sets the corresponding movement to false as when the user lets go of the key, the user must stop.
-   * @param {keyUp} event 
+   * @param {*} event 
    */
   const onKeyUp = function(event) {
     switch (event.code) {
@@ -565,13 +543,13 @@ function randomNumber(min, max) {
  * Sets gameStarted to true and calls the startGame() function.
  */
 async function loading() {
-  //await delay(5000);
+  await delay(5000);
   text.innerText = "Starting in 3...";
-  //await delay(1000);
+  await delay(1000);
   text.innerText = "Starting in 2...";
-  //await delay(1000);
+  await delay(1000);
   text.innerText = "Starting in 1...";
-  //await delay(1000);
+  await delay(1000);
   gameStarted = true;
   text.innerText = "Begin!! Get to the end without the doll catching you!";
   startGame();
@@ -589,6 +567,7 @@ async function startGame() {
   await delay(randomNumber(2000, 6000));
   redLight();
   await delay(1000);
+  text.innerText = "";
   detect = true;
   await delay(randomNumber(2000, 6000));
   startGame();
@@ -613,36 +592,37 @@ function greenLight() {
 /**
  * This function is called throughout the game, it checks to see if the player has won or not.
  * It also checks if the player has moved during the red light phase.
- * Checks to see if the camera/player has gone past the finish line and gameOver if false, if so they move on to the next scene.
- * If gameOver is true at any point, then the player has lost.
- * If during the redLight phase and the player still has not lost, if any movement is detected, the gameOver is set to false.
+ * Checks to see if the camera/player has gone past the finish line, if so they move on to the next scene.
+ * If during the redLight phase and any movement is detected, then the player is teleported back.
  */
 function checker() {
   if (camera.position.x > 743) {
-    if (!gameOver) {
-      text.innerText = "You Win!";
-      scene.clear();
+    text.innerText = "You Win!";
+    winSound.play();
+    scene.clear();
+    if (level == 1) {
+      // switch to level 2 if on level 1
       scene = levelTwo;
-      // Go to next level
-      camera.position.set(0, 10, 0);
+      level = 2;
+      setTimeout(function(){text.innerText = "Begin Level 2!"}, 2000);
+    } else if (level == 2) {
+      // switch to win screen if on level 2
+      scene.clear();
+      scene = overlay;
+      text.innerText = "Congratulations!";
+      setTimeout(function(){text.innerText = "Restart your page to try again."}, 3000);
     }
-  }
-
-  if (gameOver) {
     camera.position.set(0, 10, 0);
-    text.innerText = "You're dead! Restart."
   }
 
-  if (detect && !gameOver) {
+  if (detect) {
     if (moveForward || moveLeft || moveRight || moveBackward) {
       deathSound.play();
       text.innerText = "You Lose!";
-      //gameOver = true;
 
-      // Restart scene
-      //camera.position.set(0, 10, 0);
+      camera.position.set(0, 10, 0);
       text.innerText = "Try again!";
-      //return;
+      setTimeout(function(){text.innerText = ""}, 2000);
     }
   }
 }
@@ -698,9 +678,15 @@ function animate() {
     // this ensures consistent movements in all directions
     direction.normalize(); 
 
-    // change velocity based on inputs
-    if (moveForward || moveBackward) velocity.z -= direction.z * 1000.0 * delta;
-    if (moveLeft || moveRight) velocity.x -= direction.x * 1000.0 * delta;
+    // change velocity based on inputs and speed based on level
+    if (level == 1) {
+      if (moveForward || moveBackward) velocity.z -= direction.z * 650.0 * delta;
+      if (moveLeft || moveRight) velocity.x -= direction.x * 650.0 * delta;
+    } else {
+      if (moveForward || moveBackward) velocity.z -= direction.z * 400.0 * delta;
+      if (moveLeft || moveRight) velocity.x -= direction.x * 400.0 * delta;
+    }
+
 
     // change position based on the velocity
     controls.moveRight(- velocity.x * delta);
@@ -718,10 +704,7 @@ function animate() {
   // render the overlay first and once the game has started we render the actual scene (either level 1 or 2)
   renderer.render(overlay, camera);
   if (gameStarted) {
-    //renderer.autoClear = false;
     renderer.render(scene, camera);
-    stats.update();
-
   }
   
 }
